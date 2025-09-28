@@ -1,3 +1,6 @@
+//ç›®å‰è¿™ä¸ªæ–‡ä»¶å®ç°äº†ç”¨æ•°ç†é€»è¾‘ç»˜åˆ¶å›¾å½¢çš„è¦æ±‚ã€‚ä½†æ˜¯è¿˜æ²¡å•ç‹¬åˆ†å‡ºä¸€ä¸ªjsonæ–‡ä»¶ã€‚åç»­åº”è¯¥ä¼šåšè¿™ä¸€æ­¥
+//ç„¶åç›®å‰è¿è¡Œæ˜¯å¯ä»¥è¿›è¡Œå›¾å½¢ç»˜åˆ¶ï¼Œç§»åŠ¨å›¾å½¢å’Œè¿çº¿åŠŸèƒ½ã€‚èœå•æ å’Œå·¥å…·æ è¿˜æœ‰å·¦ä¾§çš„æ ‘å½¢åˆ†æ”¯éƒ½å¯ä»¥æ­£å¸¸è¿è¡Œã€‚
+//é™¤äº†å·¦ä¾§éƒ¨åˆ†çš„å›¾å½¢è¿˜æ²¡ç»˜åˆ¶å¯¼è‡´æ˜¾ç¤ºæœªçŸ¥ç»„ä»¶
 #include <wx/wx.h>
 #include <wx/filename.h>
 #include <wx/artprov.h>
@@ -28,7 +31,7 @@ struct Wire {
     wxPoint end;
 };
 
-// ---------- Êı¾İÇı¶¯Í¼ĞÎ ----------
+// ---------- æ•°æ®é©±åŠ¨å›¾å½¢ ----------
 enum class ShapeType { Line, Arc, Circle, Polygon, Text };
 
 struct Shape {
@@ -42,7 +45,7 @@ struct Shape {
 
 static std::map<wxString, std::vector<Shape>> shapeLibrary;
 
-// ===== »æÍ¼ÇøÀà =====
+// ===== ç»˜å›¾åŒºç±» =====
 class MyDrawPanel : public wxPanel {
 public:
     MyDrawPanel(wxWindow* parent)
@@ -56,7 +59,7 @@ public:
         Bind(wxEVT_LEFT_UP, &MyDrawPanel::OnMouseUp, this);
         Bind(wxEVT_MOTION, &MyDrawPanel::OnMouseMove, this);
 
-        // ³õÊ¼»¯ shapeLibrary
+        // åˆå§‹åŒ– shapeLibrary
         if (shapeLibrary.empty()) {
             shapeLibrary["AND"] = {
                 { ShapeType::Line, { {0,0},{40,0} } },
@@ -98,7 +101,7 @@ public:
                 { ShapeType::Text, {}, {30,80}, 0,0,0,"LED" }
             };
 
-            // ×éºÏ NAND / NOR / XNOR
+            // ç»„åˆ NAND / NOR / XNOR
             shapeLibrary["NAND"] = shapeLibrary["AND"];
             shapeLibrary["NAND"].push_back({ ShapeType::Circle, {}, {95,30}, 6 });
 
@@ -151,21 +154,21 @@ private:
     std::vector<Wire> m_wires;
     double m_scale;
 
-    // »­ÏßÏà¹Ø
+    // ç”»çº¿ç›¸å…³
     bool m_isDrawingWire;
     wxPoint m_wireStart;
     wxPoint m_currentMouse;
 
-    // ÍÏ×§Ïà¹Ø
+    // æ‹–æ‹½ç›¸å…³
     bool m_isDraggingGate;
     int m_draggedIndex;
     wxPoint m_dragOffset;
 
-    // ---------- Í¨ÓÃ»æÖÆ ----------
+    // ---------- é€šç”¨ç»˜åˆ¶ ----------
     void DrawGate(wxDC& dc, const wxString& type, wxPoint pos) {
         auto it = shapeLibrary.find(type);
         if (it == shapeLibrary.end()) {
-            dc.DrawText("Î´Öª×é¼ş", pos);
+            dc.DrawText("æœªçŸ¥ç»„ä»¶", pos);
             return;
         }
         for (auto& s : it->second) {
@@ -298,7 +301,7 @@ private:
     }
 };
 
-// ===== Ö÷´°¿Ú =====
+// ===== ä¸»çª—å£ =====
 class MyFrame : public wxFrame {
 public:
     MyFrame(const wxString& title);
@@ -333,7 +336,7 @@ private:
     wxDECLARE_EVENT_TABLE();
 };
 
-// ===== ÊÂ¼ş±í =====
+// ===== äº‹ä»¶è¡¨ =====
 wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
 EVT_MENU(wxID_NEW, MyFrame::OnNew)
 EVT_MENU(wxID_OPEN, MyFrame::OnOpen)
@@ -353,11 +356,11 @@ EVT_MENU(ID_SHOW_STATUSBAR, MyFrame::OnToggleStatusBar)
 EVT_MENU(wxID_ABOUT, MyFrame::OnAbout)
 wxEND_EVENT_TABLE()
 
-// ===== Ö÷´°¿ÚÊµÏÖ =====
+// ===== ä¸»çª—å£å®ç° =====
 MyFrame::MyFrame(const wxString& title)
     : wxFrame(nullptr, wxID_ANY, title, wxDefaultPosition, wxSize(1000, 650))
 {
-    // ²Ëµ¥À¸
+    // èœå•æ 
     wxMenu* menuFile = new wxMenu;
     menuFile->Append(wxID_NEW, "&New\tCtrl-N");
     menuFile->Append(wxID_OPEN, "&Open...\tCtrl-O");
@@ -389,24 +392,24 @@ MyFrame::MyFrame(const wxString& title)
     SetMenuBar(menuBar);
 
     CreateStatusBar();
-    SetStatusText("×¼±¸¾ÍĞ÷");
+    SetStatusText("å‡†å¤‡å°±ç»ª");
 
-    // ¹¤¾ßÀ¸
+    // å·¥å…·æ 
     wxToolBar* toolBar = CreateToolBar();
-    toolBar->AddTool(wxID_NEW, "ĞÂ½¨", wxArtProvider::GetBitmap(wxART_NEW, wxART_TOOLBAR));
-    toolBar->AddTool(wxID_OPEN, "´ò¿ª", wxArtProvider::GetBitmap(wxART_FILE_OPEN, wxART_TOOLBAR));
-    toolBar->AddTool(wxID_SAVE, "±£´æ", wxArtProvider::GetBitmap(wxART_FILE_SAVE, wxART_TOOLBAR));
+    toolBar->AddTool(wxID_NEW, "æ–°å»º", wxArtProvider::GetBitmap(wxART_NEW, wxART_TOOLBAR));
+    toolBar->AddTool(wxID_OPEN, "æ‰“å¼€", wxArtProvider::GetBitmap(wxART_FILE_OPEN, wxART_TOOLBAR));
+    toolBar->AddTool(wxID_SAVE, "ä¿å­˜", wxArtProvider::GetBitmap(wxART_FILE_SAVE, wxART_TOOLBAR));
     toolBar->AddSeparator();
-    toolBar->AddTool(wxID_UNDO, "³·Ïú", wxArtProvider::GetBitmap(wxART_UNDO, wxART_TOOLBAR));
-    toolBar->AddTool(wxID_REDO, "ÖØ×ö", wxArtProvider::GetBitmap(wxART_REDO, wxART_TOOLBAR));
+    toolBar->AddTool(wxID_UNDO, "æ’¤é”€", wxArtProvider::GetBitmap(wxART_UNDO, wxART_TOOLBAR));
+    toolBar->AddTool(wxID_REDO, "é‡åš", wxArtProvider::GetBitmap(wxART_REDO, wxART_TOOLBAR));
     toolBar->AddSeparator();
-    toolBar->AddTool(wxID_COPY, "¸´ÖÆ", wxArtProvider::GetBitmap(wxART_COPY, wxART_TOOLBAR));
-    toolBar->AddTool(wxID_PASTE, "Õ³Ìù", wxArtProvider::GetBitmap(wxART_PASTE, wxART_TOOLBAR));
+    toolBar->AddTool(wxID_COPY, "å¤åˆ¶", wxArtProvider::GetBitmap(wxART_COPY, wxART_TOOLBAR));
+    toolBar->AddTool(wxID_PASTE, "ç²˜è´´", wxArtProvider::GetBitmap(wxART_PASTE, wxART_TOOLBAR));
     toolBar->AddSeparator();
-    toolBar->AddTool(wxID_ABOUT, "¹ØÓÚ", wxArtProvider::GetBitmap(wxART_HELP, wxART_TOOLBAR));
+    toolBar->AddTool(wxID_ABOUT, "å…³äº", wxArtProvider::GetBitmap(wxART_HELP, wxART_TOOLBAR));
     toolBar->Realize();
 
-    // ·Ö¸î²¼¾Ö
+    // åˆ†å‰²å¸ƒå±€
     m_splitter = new wxSplitterWindow(this, wxID_ANY);
     m_treeCtrl = new wxTreeCtrl(m_splitter, wxID_ANY, wxDefaultPosition, wxSize(200, -1),
         wxTR_HAS_BUTTONS | wxTR_LINES_AT_ROOT | wxTR_DEFAULT_STYLE);
@@ -414,14 +417,14 @@ MyFrame::MyFrame(const wxString& title)
     m_splitter->SplitVertically(m_treeCtrl, m_drawPanel, 200);
     m_splitter->SetSashGravity(0.0);
 
-    // Ê÷½Úµã
-    wxTreeItemId root = m_treeCtrl->AddRoot("×é¼ş¿â");
-    wxTreeItemId inputId = m_treeCtrl->AppendItem(root, "ÊäÈë");
-    wxTreeItemId logicId = m_treeCtrl->AppendItem(root, "Âß¼­ÃÅ");
-    wxTreeItemId outputId = m_treeCtrl->AppendItem(root, "Êä³ö");
+    // æ ‘èŠ‚ç‚¹
+    wxTreeItemId root = m_treeCtrl->AddRoot("ç»„ä»¶åº“");
+    wxTreeItemId inputId = m_treeCtrl->AppendItem(root, "è¾“å…¥");
+    wxTreeItemId logicId = m_treeCtrl->AppendItem(root, "é€»è¾‘é—¨");
+    wxTreeItemId outputId = m_treeCtrl->AppendItem(root, "è¾“å‡º");
 
-    m_treeCtrl->AppendItem(inputId, "¿ª¹Ø");
-    m_treeCtrl->AppendItem(inputId, "°´Å¥");
+    m_treeCtrl->AppendItem(inputId, "å¼€å…³");
+    m_treeCtrl->AppendItem(inputId, "æŒ‰é’®");
     m_treeCtrl->AppendItem(logicId, "AND");
     m_treeCtrl->AppendItem(logicId, "OR");
     m_treeCtrl->AppendItem(logicId, "NOT");
@@ -431,38 +434,38 @@ MyFrame::MyFrame(const wxString& title)
     m_treeCtrl->AppendItem(logicId, "XNOR");
     m_treeCtrl->AppendItem(logicId, "BUFFER");
     m_treeCtrl->AppendItem(outputId, "LED");
-    m_treeCtrl->AppendItem(outputId, "·äÃùÆ÷");
+    m_treeCtrl->AppendItem(outputId, "èœ‚é¸£å™¨");
     m_treeCtrl->ExpandAll();
 
-    // Ê÷½Úµãµã»÷ÊÂ¼ş
+    // æ ‘èŠ‚ç‚¹ç‚¹å‡»äº‹ä»¶
     m_treeCtrl->Bind(wxEVT_TREE_SEL_CHANGED, [this](wxTreeEvent& event) {
         wxTreeItemId item = event.GetItem();
         if (!item.IsOk()) return;
         wxString name = m_treeCtrl->GetItemText(item);
 
-        // ±£´æ undo
+        // ä¿å­˜ undo
         undoStack.push(m_drawPanel->GetShapes());
         while (!redoStack.empty()) redoStack.pop();
 
         m_drawPanel->AddShape(name);
-        SetStatusText("Ñ¡ÖĞ½Úµã: " + name);
+        SetStatusText("é€‰ä¸­èŠ‚ç‚¹: " + name);
         });
 
     UpdateTitle();
 }
 
-// ===== ¹¦ÄÜÊµÏÖ =====
+// ===== åŠŸèƒ½å®ç° =====
 void MyFrame::OnNew(wxCommandEvent& event) {
     undoStack.push(m_drawPanel->GetShapes());
     redoStack = std::stack<std::vector<wxString>>();
     m_drawPanel->ClearShapes();
     m_currentFile.Clear();
     UpdateTitle();
-    SetStatusText("ĞÂ½¨ÎÄ¼ş");
+    SetStatusText("æ–°å»ºæ–‡ä»¶");
 }
 
 void MyFrame::OnOpen(wxCommandEvent& event) {
-    wxFileDialog openFileDialog(this, "´ò¿ªÎÄ¼ş", "", "",
+    wxFileDialog openFileDialog(this, "æ‰“å¼€æ–‡ä»¶", "", "",
         "Logic Files (*.logic)|*.logic|All Files (*.*)|*.*",
         wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
@@ -471,7 +474,7 @@ void MyFrame::OnOpen(wxCommandEvent& event) {
 
     wxFileInputStream input(openFileDialog.GetPath());
     if (!input.IsOk()) {
-        wxLogError("ÎŞ·¨´ò¿ªÎÄ¼ş '%s'.", openFileDialog.GetPath());
+        wxLogError("æ— æ³•æ‰“å¼€æ–‡ä»¶ '%s'.", openFileDialog.GetPath());
         return;
     }
 
@@ -485,13 +488,13 @@ void MyFrame::OnOpen(wxCommandEvent& event) {
     m_drawPanel->SetShapes(shapes);
     m_currentFile = openFileDialog.GetPath();
     UpdateTitle();
-    SetStatusText("ÒÑ´ò¿ª: " + m_currentFile);
+    SetStatusText("å·²æ‰“å¼€: " + m_currentFile);
 }
 
 void MyFrame::DoSave(const wxString& filename) {
     wxFileOutputStream output(filename);
     if (!output.IsOk()) {
-        wxLogError("ÎŞ·¨±£´æÎÄ¼ş '%s'.", filename);
+        wxLogError("æ— æ³•ä¿å­˜æ–‡ä»¶ '%s'.", filename);
         return;
     }
 
@@ -502,7 +505,7 @@ void MyFrame::DoSave(const wxString& filename) {
 
     m_currentFile = filename;
     UpdateTitle();
-    SetStatusText("ÒÑ±£´æ: " + filename);
+    SetStatusText("å·²ä¿å­˜: " + filename);
 }
 
 void MyFrame::OnSave(wxCommandEvent& event) {
@@ -515,7 +518,7 @@ void MyFrame::OnSave(wxCommandEvent& event) {
 }
 
 void MyFrame::OnSaveAs(wxCommandEvent& event) {
-    wxFileDialog saveFileDialog(this, "±£´æÎÄ¼ş", "", "",
+    wxFileDialog saveFileDialog(this, "ä¿å­˜æ–‡ä»¶", "", "",
         "Logic Files (*.logic)|*.logic|All Files (*.*)|*.*",
         wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 
@@ -534,10 +537,10 @@ void MyFrame::OnUndo(wxCommandEvent& event) {
         redoStack.push(m_drawPanel->GetShapes());
         m_drawPanel->SetShapes(undoStack.top());
         undoStack.pop();
-        SetStatusText("³·Ïú³É¹¦");
+        SetStatusText("æ’¤é”€æˆåŠŸ");
     }
     else {
-        SetStatusText("Ã»ÓĞ¿É³·ÏúµÄ²Ù×÷");
+        SetStatusText("æ²¡æœ‰å¯æ’¤é”€çš„æ“ä½œ");
     }
 }
 
@@ -546,10 +549,10 @@ void MyFrame::OnRedo(wxCommandEvent& event) {
         undoStack.push(m_drawPanel->GetShapes());
         m_drawPanel->SetShapes(redoStack.top());
         redoStack.pop();
-        SetStatusText("ÖØ×ö³É¹¦");
+        SetStatusText("é‡åšæˆåŠŸ");
     }
     else {
-        SetStatusText("Ã»ÓĞ¿ÉÖØ×öµÄ²Ù×÷");
+        SetStatusText("æ²¡æœ‰å¯é‡åšçš„æ“ä½œ");
     }
 }
 
@@ -559,7 +562,7 @@ void MyFrame::OnCopy(wxCommandEvent& event) {
         wxTheClipboard->Open();
         wxTheClipboard->SetData(new wxTextDataObject(shapes.back()));
         wxTheClipboard->Close();
-        SetStatusText("ÒÑ¸´ÖÆ: " + shapes.back());
+        SetStatusText("å·²å¤åˆ¶: " + shapes.back());
     }
 }
 
@@ -571,7 +574,7 @@ void MyFrame::OnPaste(wxCommandEvent& event) {
             undoStack.push(m_drawPanel->GetShapes());
             redoStack = std::stack<std::vector<wxString>>();
             m_drawPanel->AddShape(data.GetText());
-            SetStatusText("ÒÑÕ³Ìù: " + data.GetText());
+            SetStatusText("å·²ç²˜è´´: " + data.GetText());
         }
         wxTheClipboard->Close();
     }
@@ -579,12 +582,12 @@ void MyFrame::OnPaste(wxCommandEvent& event) {
 
 void MyFrame::OnZoomin(wxCommandEvent& event) {
     m_drawPanel->ZoomIn();
-    SetStatusText("·Å´óÊÓÍ¼");
+    SetStatusText("æ”¾å¤§è§†å›¾");
 }
 
 void MyFrame::OnZoomout(wxCommandEvent& event) {
     m_drawPanel->ZoomOut();
-    SetStatusText("ËõĞ¡ÊÓÍ¼");
+    SetStatusText("ç¼©å°è§†å›¾");
 }
 
 void MyFrame::OnToggleStatusBar(wxCommandEvent& event) {
@@ -598,25 +601,26 @@ void MyFrame::OnToggleStatusBar(wxCommandEvent& event) {
 }
 
 void MyFrame::OnAbout(wxCommandEvent& event) {
-    wxMessageBox("Âß¼­µçÂ·»æÍ¼ Demo\nÊ¹ÓÃ wxWidgets ÊµÏÖ\n\nÖ§³Ö»ù±¾µÄÎÄ¼ş²Ù×÷¡¢³·ÏúÖØ×öºÍ×é¼ş»æÖÆ¡£",
-        "¹ØÓÚ", wxOK | wxICON_INFORMATION, this);
+    wxMessageBox("é€»è¾‘ç”µè·¯ç»˜å›¾ Demo\nä½¿ç”¨ wxWidgets å®ç°\n\næ”¯æŒåŸºæœ¬çš„æ–‡ä»¶æ“ä½œã€æ’¤é”€é‡åšå’Œç»„ä»¶ç»˜åˆ¶ã€‚",
+        "å…³äº", wxOK | wxICON_INFORMATION, this);
 }
 
 void MyFrame::UpdateTitle() {
-    wxString title = "wxWidgets »æÍ¼Demo";
+    wxString title = "wxWidgets ç»˜å›¾Demo";
     if (!m_currentFile.IsEmpty()) {
         title += " - " + m_currentFile;
     }
     SetTitle(title);
 }
 
-// ===== Ó¦ÓÃÈë¿Ú =====
+// ===== åº”ç”¨å…¥å£ =====
 class MyApp : public wxApp {
 public:
     virtual bool OnInit() override {
-        MyFrame* frame = new MyFrame("wxWidgets »æÍ¼Demo");
+        MyFrame* frame = new MyFrame("wxWidgets ç»˜å›¾Demo");
         frame->Show(true);
         return true;
     }
 };
 wxIMPLEMENT_APP(MyApp);
+

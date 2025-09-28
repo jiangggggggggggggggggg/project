@@ -6,15 +6,19 @@
 #include <wx/sizer.h>
 #include <wx/splitter.h>
 #include <wx/dcbuffer.h>
+#include <wx/graphics.h>
 #include <vector>
 #include <stack>
-#include<wx/clipbrd.h>
+#include <wx/clipbrd.h>
 #include <wx/txtstrm.h>
-#include <wx/wfstream.h> 
+#include <wx/wfstream.h>
+#include <map>
+#include <cmath>
 
 enum {
     ID_SHOW_STATUSBAR = wxID_HIGHEST + 1
 };
+
 struct Gate {
     wxString type;
     wxPoint pos;
@@ -23,22 +27,90 @@ struct Wire {
     wxPoint start;
     wxPoint end;
 };
+
+// ---------- 数据驱动图形 ----------
+enum class ShapeType { Line, Arc, Circle, Polygon, Text };
+
+struct Shape {
+    ShapeType type;
+    std::vector<wxPoint> pts;
+    wxPoint center;
+    int radius = 0;
+    int startAngle = 0, endAngle = 0;
+    wxString text;
+};
+
+static std::map<wxString, std::vector<Shape>> shapeLibrary;
+
 // ===== 绘图区类 =====
 class MyDrawPanel : public wxPanel {
 public:
     MyDrawPanel(wxWindow* parent)
         : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SIMPLE),
-        m_scale(1.0), m_isDrawingWire(false)
+        m_scale(1.0), m_isDrawingWire(false),
+        m_isDraggingGate(false), m_draggedIndex(-1)
     {
         SetBackgroundStyle(wxBG_STYLE_PAINT);
         Bind(wxEVT_PAINT, &MyDrawPanel::OnPaint, this);
         Bind(wxEVT_LEFT_DOWN, &MyDrawPanel::OnMouseDown, this);
         Bind(wxEVT_LEFT_UP, &MyDrawPanel::OnMouseUp, this);
         Bind(wxEVT_MOTION, &MyDrawPanel::OnMouseMove, this);
+
+        // 初始化 shapeLibrary
+        if (shapeLibrary.empty()) {
+            shapeLibrary["AND"] = {
+                { ShapeType::Line, { {0,0},{40,0} } },
+                { ShapeType::Line, { {0,60},{40,60} } },
+                { ShapeType::Line, { {0,0},{0,60} } },
+                { ShapeType::Arc, {}, {40,30}, 30, 270, 90 },
+                { ShapeType::Line, { {-20,15},{0,15} } },
+                { ShapeType::Line, { {-20,45},{0,45} } },
+                { ShapeType::Line, { {70,30},{90,30} } }
+            };
+            shapeLibrary["OR"] = {
+                { ShapeType::Arc, {}, {20,30}, 60, 270, 90 },
+                { ShapeType::Arc, {}, {0,30}, 60, 270, 90 },
+                { ShapeType::Line, { {-30,15},{0,15} } },
+                { ShapeType::Line, { {-30,45},{0,45} } },
+                { ShapeType::Line, { {70,30},{90,30} } }
+            };
+            shapeLibrary["NOT"] = {
+                { ShapeType::Polygon, { {0,0},{0,60},{60,30} } },
+                { ShapeType::Circle, {}, {70,30}, 6 },
+                { ShapeType::Line, { {-20,30},{0,30} } },
+                { ShapeType::Line, { {76,30},{96,30} } }
+            };
+            shapeLibrary["BUFFER"] = {
+                { ShapeType::Polygon, { {0,0},{0,60},{60,30} } },
+                { ShapeType::Line, { {-20,30},{0,30} } },
+                { ShapeType::Line, { {60,30},{80,30} } }
+            };
+            shapeLibrary["XOR"] = {
+                { ShapeType::Arc, {}, {20,30}, 60, 270, 90 },
+                { ShapeType::Arc, {}, {0,30}, 60, 270, 90 },
+                { ShapeType::Arc, {}, {-10,30}, 60, 270, 90 },
+                { ShapeType::Line, { {-35,15},{0,15} } },
+                { ShapeType::Line, { {-35,45},{0,45} } },
+                { ShapeType::Line, { {70,30},{90,30} } }
+            };
+            shapeLibrary["LED"] = {
+                { ShapeType::Circle, {}, {40,40}, 30 },
+                { ShapeType::Text, {}, {30,80}, 0,0,0,"LED" }
+            };
+
+            // 组合 NAND / NOR / XNOR
+            shapeLibrary["NAND"] = shapeLibrary["AND"];
+            shapeLibrary["NAND"].push_back({ ShapeType::Circle, {}, {95,30}, 6 });
+
+            shapeLibrary["NOR"] = shapeLibrary["OR"];
+            shapeLibrary["NOR"].push_back({ ShapeType::Circle, {}, {95,30}, 6 });
+
+            shapeLibrary["XNOR"] = shapeLibrary["XOR"];
+            shapeLibrary["XNOR"].push_back({ ShapeType::Circle, {}, {95,30}, 6 });
+        }
     }
 
     void AddShape(const wxString& shape) {
-        // 默认位置简单布局
         m_gates.push_back({ shape, wxPoint(50 + (m_gates.size() % 3) * 150,
                                            50 + (m_gates.size() / 3) * 150) });
         Refresh();
@@ -71,88 +143,89 @@ public:
         Refresh();
     }
 
-    void ZoomIn() {
-        m_scale *= 1.2;
-        Refresh();
-    }
-
-    void ZoomOut() {
-        m_scale /= 1.2;
-        if (m_scale < 0.2) m_scale = 0.2;
-        Refresh();
-    }
+    void ZoomIn() { m_scale *= 1.2; Refresh(); }
+    void ZoomOut() { m_scale /= 1.2; if (m_scale < 0.2) m_scale = 0.2; Refresh(); }
 
 private:
     std::vector<Gate> m_gates;
     std::vector<Wire> m_wires;
     double m_scale;
 
+    // 画线相关
     bool m_isDrawingWire;
     wxPoint m_wireStart;
     wxPoint m_currentMouse;
 
-    // ===== 绘制各种逻辑门 =====
-    void DrawAndGate(wxDC& dc, wxPoint pos) {
-        int x = pos.x, y = pos.y;
+    // 拖拽相关
+    bool m_isDraggingGate;
+    int m_draggedIndex;
+    wxPoint m_dragOffset;
+
+    // ---------- 通用绘制 ----------
+    void DrawGate(wxDC& dc, const wxString& type, wxPoint pos) {
+        auto it = shapeLibrary.find(type);
+        if (it == shapeLibrary.end()) {
+            dc.DrawText("未知组件", pos);
+            return;
+        }
+        for (auto& s : it->second) {
+            if (s.type == ShapeType::Line && s.pts.size() >= 2) {
+                dc.DrawLine(pos.x + s.pts[0].x, pos.y + s.pts[0].y,
+                    pos.x + s.pts[1].x, pos.y + s.pts[1].y);
+            }
+            else if (s.type == ShapeType::Polygon && s.pts.size() >= 3) {
+                std::vector<wxPoint> pts;
+                for (auto& p : s.pts) pts.push_back(wxPoint(pos.x + p.x, pos.y + p.y));
+                dc.DrawPolygon((int)pts.size(), &pts[0]);
+            }
+            else if (s.type == ShapeType::Circle) {
+                dc.DrawCircle(pos.x + s.center.x, pos.y + s.center.y, s.radius);
+            }
+            else if (s.type == ShapeType::Arc) {
+                dc.DrawEllipticArc(pos.x + s.center.x - s.radius, pos.y + s.center.y - s.radius,
+                    2 * s.radius, 2 * s.radius, s.startAngle, s.endAngle);
+            }
+            else if (s.type == ShapeType::Text) {
+                dc.DrawText(s.text, pos.x + s.center.x, pos.y + s.center.y);
+            }
+        }
+    }
+
+    wxRect GetGateBBox(const Gate& g) const {
         int w = 80, h = 60;
-        dc.DrawLine(x, y, x + w / 2, y);
-        dc.DrawLine(x, y + h, x + w / 2, y + h);
-        dc.DrawLine(x, y, x, y + h);
-        dc.DrawArc(x + w / 2, y + h, x + w / 2, y, x + w, y + h / 2);
-        dc.DrawLine(x - 20, y + h / 4, x, y + h / 4);
-        dc.DrawLine(x - 20, y + 3 * h / 4, x, y + 3 * h / 4);
-        dc.DrawLine(x + w, y + h / 2, x + w + 20, y + h / 2);
+        if (g.type == "NOT" || g.type == "BUFFER") { w = 70; h = 60; }
+        else if (g.type == "LED") { w = 80; h = 90; }
+        return wxRect(g.pos.x, g.pos.y, w, h);
     }
 
-    void DrawOrGate(wxDC& dc, wxPoint pos) {
-        int x = pos.x, y = pos.y;
-        int w = 80, h = 60;
-        dc.DrawArc(x - 10, y + h, x - 10, y, x + 20, y + h / 2);
-        dc.DrawArc(x + 20, y + h, x + 20, y, x + w, y + h / 2);
-        dc.DrawLine(x - 30, y + h / 4, x + 5, y + h / 4);
-        dc.DrawLine(x - 30, y + 3 * h / 4, x + 5, y + 3 * h / 4);
-        dc.DrawLine(x + w, y + h / 2, x + w + 20, y + h / 2);
-    }
-
-    void DrawNotGate(wxDC& dc, wxPoint pos) {
-        int x = pos.x, y = pos.y;
-        int w = 70, h = 60;
-        wxPoint tri[3] = { wxPoint(x, y), wxPoint(x, y + h), wxPoint(x + w, y + h / 2) };
-        dc.DrawPolygon(3, tri);
-        dc.DrawCircle(x + w + 8, y + h / 2, 8);
-        dc.DrawLine(x - 20, y + h / 2, x, y + h / 2);
-        dc.DrawLine(x + w + 16, y + h / 2, x + w + 36, y + h / 2);
-    }
-
-    void DrawXorGate(wxDC& dc, wxPoint pos) {
-        int x = pos.x, y = pos.y;
-        int w = 80, h = 60;
-        dc.DrawArc(x - 15, y + h, x - 15, y, x + 15, y + h / 2);
-        dc.DrawArc(x, y + h, x, y, x + w, y + h / 2);
-        dc.DrawLine(x - 35, y + h / 4, x, y + h / 4);
-        dc.DrawLine(x - 35, y + 3 * h / 4, x, y + 3 * h / 4);
-        dc.DrawLine(x + w, y + h / 2, x + w + 20, y + h / 2);
-    }
-
-    void DrawLed(wxDC& dc, wxPoint pos) {
-        dc.SetBrush(*wxRED_BRUSH);
-        dc.DrawCircle(pos.x + 40, pos.y + 40, 30);
-        dc.DrawText("LED", pos.x + 30, pos.y + 80);
+    wxPoint ToLogical(const wxPoint& devicePt) const {
+        double lx = devicePt.x / m_scale;
+        double ly = devicePt.y / m_scale;
+        return wxPoint(int(lx + 0.5), int(ly + 0.5));
     }
 
     void OnPaint(wxPaintEvent&) {
         wxAutoBufferedPaintDC dc(this);
         dc.Clear();
         dc.SetUserScale(m_scale, m_scale);
+
+        wxPen redPen(wxColour(200, 0, 0), 2, wxPENSTYLE_SOLID);
+        wxPen dashPen(wxColour(0, 0, 0), 1, wxPENSTYLE_SHORT_DASH);
+
         dc.SetPen(*wxBLACK_PEN);
 
-        for (auto& g : m_gates) {
-            if (g.type == "AND") DrawAndGate(dc, g.pos);
-            else if (g.type == "OR") DrawOrGate(dc, g.pos);
-            else if (g.type == "NOT") DrawNotGate(dc, g.pos);
-            else if (g.type == "XOR") DrawXorGate(dc, g.pos);
-            else if (g.type == "LED") DrawLed(dc, g.pos);
-            else dc.DrawText("未知组件", g.pos);
+        for (size_t i = 0; i < m_gates.size(); ++i) {
+            auto& g = m_gates[i];
+            DrawGate(dc, g.type, g.pos);
+
+            if (m_isDraggingGate && (int)i == m_draggedIndex) {
+                wxRect r = GetGateBBox(g);
+                dc.SetPen(dashPen);
+                dc.SetBrush(*wxTRANSPARENT_BRUSH);
+                dc.DrawRectangle(r);
+                dc.SetPen(*wxBLACK_PEN);
+                dc.SetBrush(*wxWHITE_BRUSH);
+            }
         }
 
         for (auto& w : m_wires) {
@@ -160,35 +233,66 @@ private:
         }
 
         if (m_isDrawingWire) {
-            dc.SetPen(*wxRED_PEN);
+            dc.SetPen(redPen);
             dc.DrawLine(m_wireStart, m_currentMouse);
             dc.SetPen(*wxBLACK_PEN);
         }
     }
 
     void OnMouseDown(wxMouseEvent& evt) {
-        if (!m_isDrawingWire) {
-            m_isDrawingWire = true;
-            m_wireStart = evt.GetPosition();
-            m_currentMouse = m_wireStart;
+        wxPoint pos = ToLogical(evt.GetPosition());
+        int hitIndex = -1;
+        for (int i = (int)m_gates.size() - 1; i >= 0; --i) {
+            if (GetGateBBox(m_gates[i]).Contains(pos)) {
+                hitIndex = i; break;
+            }
+        }
+
+        if (hitIndex != -1) {
+            m_isDraggingGate = true;
+            m_draggedIndex = hitIndex;
+            m_dragOffset = wxPoint(pos.x - m_gates[hitIndex].pos.x, pos.y - m_gates[hitIndex].pos.y);
+            if (!HasCapture()) CaptureMouse();
+            SetCursor(wxCursor(wxCURSOR_SIZING));
         }
         else {
-            m_wires.push_back({ m_wireStart, evt.GetPosition() });
-            m_isDrawingWire = false;
+            m_isDrawingWire = true;
+            m_wireStart = pos;
+            m_currentMouse = pos;
+            if (!HasCapture()) CaptureMouse();
+            SetCursor(wxCursor(wxCURSOR_CROSS));
         }
         Refresh();
     }
 
-    void OnMouseUp(wxMouseEvent& evt) {
-        if (m_isDrawingWire) {
-            m_currentMouse = evt.GetPosition();
+    void OnMouseMove(wxMouseEvent& evt) {
+        wxPoint pos = ToLogical(evt.GetPosition());
+        if (m_isDraggingGate && evt.Dragging() && evt.LeftIsDown()) {
+            if (m_draggedIndex >= 0 && m_draggedIndex < (int)m_gates.size()) {
+                m_gates[m_draggedIndex].pos = wxPoint(pos.x - m_dragOffset.x, pos.y - m_dragOffset.y);
+                Refresh();
+            }
+        }
+        else if (m_isDrawingWire && evt.Dragging() && evt.LeftIsDown()) {
+            m_currentMouse = pos;
             Refresh();
         }
     }
 
-    void OnMouseMove(wxMouseEvent& evt) {
-        if (m_isDrawingWire && evt.Dragging() && evt.LeftIsDown()) {
-            m_currentMouse = evt.GetPosition();
+    void OnMouseUp(wxMouseEvent&) {
+        wxPoint pos = m_currentMouse;
+        if (m_isDraggingGate) {
+            m_isDraggingGate = false;
+            m_draggedIndex = -1;
+            if (HasCapture()) ReleaseMouse();
+            SetCursor(wxCursor(wxCURSOR_ARROW));
+            Refresh();
+        }
+        else if (m_isDrawingWire) {
+            m_wires.push_back({ m_wireStart, pos });
+            m_isDrawingWire = false;
+            if (HasCapture()) ReleaseMouse();
+            SetCursor(wxCursor(wxCURSOR_ARROW));
             Refresh();
         }
     }
@@ -198,7 +302,6 @@ private:
 class MyFrame : public wxFrame {
 public:
     MyFrame(const wxString& title);
-
 private:
     MyDrawPanel* m_drawPanel;
     wxTreeCtrl* m_treeCtrl;
@@ -230,6 +333,7 @@ private:
     wxDECLARE_EVENT_TABLE();
 };
 
+// ===== 事件表 =====
 wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
 EVT_MENU(wxID_NEW, MyFrame::OnNew)
 EVT_MENU(wxID_OPEN, MyFrame::OnOpen)
@@ -249,6 +353,7 @@ EVT_MENU(ID_SHOW_STATUSBAR, MyFrame::OnToggleStatusBar)
 EVT_MENU(wxID_ABOUT, MyFrame::OnAbout)
 wxEND_EVENT_TABLE()
 
+// ===== 主窗口实现 =====
 MyFrame::MyFrame(const wxString& title)
     : wxFrame(nullptr, wxID_ANY, title, wxDefaultPosition, wxSize(1000, 650))
 {
@@ -320,6 +425,11 @@ MyFrame::MyFrame(const wxString& title)
     m_treeCtrl->AppendItem(logicId, "AND");
     m_treeCtrl->AppendItem(logicId, "OR");
     m_treeCtrl->AppendItem(logicId, "NOT");
+    m_treeCtrl->AppendItem(logicId, "XOR");
+    m_treeCtrl->AppendItem(logicId, "NAND");
+    m_treeCtrl->AppendItem(logicId, "NOR");
+    m_treeCtrl->AppendItem(logicId, "XNOR");
+    m_treeCtrl->AppendItem(logicId, "BUFFER");
     m_treeCtrl->AppendItem(outputId, "LED");
     m_treeCtrl->AppendItem(outputId, "蜂鸣器");
     m_treeCtrl->ExpandAll();

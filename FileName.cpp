@@ -1,4 +1,6 @@
-﻿#include <wx/wx.h>
+//目前已经把画图部分分出去到json文件里面了
+//可以实现绘图，移动，画线等功能。然后菜单栏和工具栏可以正常运行
+#include <wx/wx.h>
 #include <wx/filename.h>
 #include <wx/artprov.h>
 #include <wx/toolbar.h>
@@ -623,3 +625,4 @@ public:
     }
 };
 wxIMPLEMENT_APP(MyApp);
+

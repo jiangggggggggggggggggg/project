@@ -1,0 +1,346 @@
+{
+  "AND": [
+    {
+      "type": "Line",
+      "pts": [
+        [ 0, 0 ],
+        [ 40, 0 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 0, 60 ],
+        [ 40, 60 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 0, 0 ],
+        [ 0, 60 ]
+      ]
+    },
+    {
+      "type": "Arc",
+      "center": [ 40, 30 ],
+      "radius": 30,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -20, 15 ],
+        [ 0, 15 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -20, 45 ],
+        [ 0, 45 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 70, 30 ],
+        [ 90, 30 ]
+      ]
+    }
+  ],
+  "OR": [
+    {
+      "type": "Arc",
+      "center": [ 20, 30 ],
+      "radius": 60,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Arc",
+      "center": [ 0, 30 ],
+      "radius": 60,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -30, 15 ],
+        [ 0, 15 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -30, 45 ],
+        [ 0, 45 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 70, 30 ],
+        [ 90, 30 ]
+      ]
+    }
+  ],
+  "NOT": [
+    {
+      "type": "Polygon",
+      "pts": [
+        [ 0, 0 ],
+        [ 0, 60 ],
+        [ 60, 30 ]
+      ]
+    },
+    {
+      "type": "Circle",
+      "center": [ 70, 30 ],
+      "radius": 6
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -20, 30 ],
+        [ 0, 30 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 76, 30 ],
+        [ 96, 30 ]
+      ]
+    }
+  ],
+  "BUFFER": [
+    {
+      "type": "Polygon",
+      "pts": [
+        [ 0, 0 ],
+        [ 0, 60 ],
+        [ 60, 30 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -20, 30 ],
+        [ 0, 30 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 60, 30 ],
+        [ 80, 30 ]
+      ]
+    }
+  ],
+  "XOR": [
+    {
+      "type": "Arc",
+      "center": [ 20, 30 ],
+      "radius": 60,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Arc",
+      "center": [ 0, 30 ],
+      "radius": 60,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Arc",
+      "center": [ -10, 30 ],
+      "radius": 60,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -35, 15 ],
+        [ 0, 15 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -35, 45 ],
+        [ 0, 45 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 70, 30 ],
+        [ 90, 30 ]
+      ]
+    }
+  ],
+  "LED": [
+    {
+      "type": "Circle",
+      "center": [ 40, 40 ],
+      "radius": 30
+    },
+    {
+      "type": "Text",
+      "center": [ 30, 80 ],
+      "text": "LED"
+    }
+  ],
+  "NAND": [
+    {
+      "type": "Line",
+      "pts": [
+        [ 0, 0 ],
+        [ 40, 0 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 0, 60 ],
+        [ 40, 60 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 0, 0 ],
+        [ 0, 60 ]
+      ]
+    },
+    {
+      "type": "Arc",
+      "center": [ 40, 30 ],
+      "radius": 30,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -20, 15 ],
+        [ 0, 15 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -20, 45 ],
+        [ 0, 45 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 70, 30 ],
+        [ 90, 30 ]
+      ]
+    },
+    {
+      "type": "Circle",
+      "center": [ 95, 30 ],
+      "radius": 6
+    }
+  ],
+  "NOR": [
+    {
+      "type": "Arc",
+      "center": [ 20, 30 ],
+      "radius": 60,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Arc",
+      "center": [ 0, 30 ],
+      "radius": 60,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -30, 15 ],
+        [ 0, 15 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -30, 45 ],
+        [ 0, 45 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 70, 30 ],
+        [ 90, 30 ]
+      ]
+    },
+    {
+      "type": "Circle",
+      "center": [ 95, 30 ],
+      "radius": 6
+    }
+  ],
+  "XNOR": [
+    {
+      "type": "Arc",
+      "center": [ 20, 30 ],
+      "radius": 60,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Arc",
+      "center": [ 0, 30 ],
+      "radius": 60,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Arc",
+      "center": [ -10, 30 ],
+      "radius": 60,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -35, 15 ],
+        [ 0, 15 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -35, 45 ],
+        [ 0, 45 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 70, 30 ],
+        [ 90, 30 ]
+      ]
+    },
+    {
+      "type": "Circle",
+      "center": [ 95, 30 ],
+      "radius": 6
+    }
+  ]
+}

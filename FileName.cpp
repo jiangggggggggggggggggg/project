@@ -1,7 +1,4 @@
-//目前这个文件实现了用数理逻辑绘制图形的要求。但是还没单独分出一个json文件。后续应该会做这一步
-//然后目前运行是可以进行图形绘制，移动图形和连线功能。菜单栏和工具栏还有左侧的树形分支都可以正常运行。
-//除了左侧部分的图形还没绘制导致显示未知组件
-#include <wx/wx.h>
+﻿#include <wx/wx.h>
 #include <wx/filename.h>
 #include <wx/artprov.h>
 #include <wx/toolbar.h>
@@ -17,7 +14,13 @@
 #include <wx/wfstream.h>
 #include <map>
 #include <cmath>
+#include <fstream>
 
+// 引入 JSON 库
+#include "json.hpp"
+using json = nlohmann::json;
+
+// 自定义 ID
 enum {
     ID_SHOW_STATUSBAR = wxID_HIGHEST + 1
 };
@@ -31,7 +34,6 @@ struct Wire {
     wxPoint end;
 };
 
-// ---------- 数据驱动图形 ----------
 enum class ShapeType { Line, Arc, Circle, Polygon, Text };
 
 struct Shape {
@@ -44,6 +46,51 @@ struct Shape {
 };
 
 static std::map<wxString, std::vector<Shape>> shapeLibrary;
+
+// ===== JSON 加载函数 (兼容 C++14) =====
+void LoadShapesFromJson(const std::string& filename) {
+    std::ifstream f(filename.c_str());
+    if (!f.is_open()) {
+        wxLogError("无法打开图形文件: %s", filename);
+        return;
+    }
+    json j;
+    f >> j;
+
+    for (json::iterator it = j.begin(); it != j.end(); ++it) {
+        std::string gateName = it.key();
+        auto shapes = it.value();
+
+        std::vector<Shape> vec;
+        for (size_t i = 0; i < shapes.size(); ++i) {
+            auto s = shapes[i];
+            Shape shape;
+            std::string type = s["type"];
+            if (type == "Line") shape.type = ShapeType::Line;
+            else if (type == "Arc") shape.type = ShapeType::Arc;
+            else if (type == "Circle") shape.type = ShapeType::Circle;
+            else if (type == "Polygon") shape.type = ShapeType::Polygon;
+            else if (type == "Text") shape.type = ShapeType::Text;
+
+            if (s.find("pts") != s.end()) {
+                for (size_t pi = 0; pi < s["pts"].size(); ++pi) {
+                    auto p = s["pts"][pi];
+                    shape.pts.push_back(wxPoint(p[0], p[1]));
+                }
+            }
+            if (s.find("center") != s.end()) {
+                shape.center = wxPoint(s["center"][0], s["center"][1]);
+            }
+            if (s.find("radius") != s.end()) shape.radius = s["radius"];
+            if (s.find("startAngle") != s.end()) shape.startAngle = s["startAngle"];
+            if (s.find("endAngle") != s.end()) shape.endAngle = s["endAngle"];
+            if (s.find("text") != s.end()) shape.text = s["text"].get<std::string>().c_str();
+
+            vec.push_back(shape);
+        }
+        shapeLibrary[wxString::FromUTF8(gateName.c_str())] = vec;
+    }
+}
 
 // ===== 绘图区类 =====
 class MyDrawPanel : public wxPanel {
@@ -59,59 +106,12 @@ public:
         Bind(wxEVT_LEFT_UP, &MyDrawPanel::OnMouseUp, this);
         Bind(wxEVT_MOTION, &MyDrawPanel::OnMouseMove, this);
 
-        // 初始化 shapeLibrary
         if (shapeLibrary.empty()) {
-            shapeLibrary["AND"] = {
-                { ShapeType::Line, { {0,0},{40,0} } },
-                { ShapeType::Line, { {0,60},{40,60} } },
-                { ShapeType::Line, { {0,0},{0,60} } },
-                { ShapeType::Arc, {}, {40,30}, 30, 270, 90 },
-                { ShapeType::Line, { {-20,15},{0,15} } },
-                { ShapeType::Line, { {-20,45},{0,45} } },
-                { ShapeType::Line, { {70,30},{90,30} } }
-            };
-            shapeLibrary["OR"] = {
-                { ShapeType::Arc, {}, {20,30}, 60, 270, 90 },
-                { ShapeType::Arc, {}, {0,30}, 60, 270, 90 },
-                { ShapeType::Line, { {-30,15},{0,15} } },
-                { ShapeType::Line, { {-30,45},{0,45} } },
-                { ShapeType::Line, { {70,30},{90,30} } }
-            };
-            shapeLibrary["NOT"] = {
-                { ShapeType::Polygon, { {0,0},{0,60},{60,30} } },
-                { ShapeType::Circle, {}, {70,30}, 6 },
-                { ShapeType::Line, { {-20,30},{0,30} } },
-                { ShapeType::Line, { {76,30},{96,30} } }
-            };
-            shapeLibrary["BUFFER"] = {
-                { ShapeType::Polygon, { {0,0},{0,60},{60,30} } },
-                { ShapeType::Line, { {-20,30},{0,30} } },
-                { ShapeType::Line, { {60,30},{80,30} } }
-            };
-            shapeLibrary["XOR"] = {
-                { ShapeType::Arc, {}, {20,30}, 60, 270, 90 },
-                { ShapeType::Arc, {}, {0,30}, 60, 270, 90 },
-                { ShapeType::Arc, {}, {-10,30}, 60, 270, 90 },
-                { ShapeType::Line, { {-35,15},{0,15} } },
-                { ShapeType::Line, { {-35,45},{0,45} } },
-                { ShapeType::Line, { {70,30},{90,30} } }
-            };
-            shapeLibrary["LED"] = {
-                { ShapeType::Circle, {}, {40,40}, 30 },
-                { ShapeType::Text, {}, {30,80}, 0,0,0,"LED" }
-            };
-
-            // 组合 NAND / NOR / XNOR
-            shapeLibrary["NAND"] = shapeLibrary["AND"];
-            shapeLibrary["NAND"].push_back({ ShapeType::Circle, {}, {95,30}, 6 });
-
-            shapeLibrary["NOR"] = shapeLibrary["OR"];
-            shapeLibrary["NOR"].push_back({ ShapeType::Circle, {}, {95,30}, 6 });
-
-            shapeLibrary["XNOR"] = shapeLibrary["XOR"];
-            shapeLibrary["XNOR"].push_back({ ShapeType::Circle, {}, {95,30}, 6 });
+            LoadShapesFromJson("D:/学习/综设一/Project1/x64/Debug/shapes.json");
+            // 🔥 这里调用
         }
     }
+
 
     void AddShape(const wxString& shape) {
         m_gates.push_back({ shape, wxPoint(50 + (m_gates.size() % 3) * 150,
@@ -623,4 +623,3 @@ public:
     }
 };
 wxIMPLEMENT_APP(MyApp);
-

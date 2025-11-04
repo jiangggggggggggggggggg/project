@@ -1,7 +1,12 @@
-//这个json文件我的代码里面引用的时候用的绝对路径，下载下来的话可能要去cpp文件里面改一下绝对路径，改成你们电脑上的存储位置
-//一般是存在x64文件夹下面，和exe放在一个目录下
 {
   "AND": [
+    {
+      "type": "Line",
+      "pts": [
+        [ 0, 0 ],
+        [ 0, 60 ]
+      ]
+    },
     {
       "type": "Line",
       "pts": [
@@ -17,10 +22,59 @@
       ]
     },
     {
+      "type": "Arc",
+      "center": [ 40, 30 ],
+      "radius": 30,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -15, 20 ],
+        [ 0, 20 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -15, 40 ],
+        [ 0, 40 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 70, 30 ],
+        [ 85, 30 ]
+      ]
+    },
+    {
+      "type": "Text",
+      "center": [ 25, 30 ],
+      "text": "&"
+    }
+  ],
+  "NAND": [
+    {
       "type": "Line",
       "pts": [
         [ 0, 0 ],
         [ 0, 60 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 0, 0 ],
+        [ 40, 0 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 0, 60 ],
+        [ 40, 60 ]
       ]
     },
     {
@@ -31,62 +85,77 @@
       "endAngle": 90
     },
     {
+      "type": "Circle",
+      "center": [ 75, 30 ],
+      "radius": 5
+    },
+    {
       "type": "Line",
       "pts": [
-        [ -20, 15 ],
-        [ 0, 15 ]
+        [ -15, 20 ],
+        [ 0, 20 ]
       ]
     },
     {
       "type": "Line",
       "pts": [
-        [ -20, 45 ],
-        [ 0, 45 ]
+        [ -15, 40 ],
+        [ 0, 40 ]
       ]
     },
     {
       "type": "Line",
       "pts": [
-        [ 70, 30 ],
-        [ 90, 30 ]
+        [ 80, 30 ],
+        [ 95, 30 ]
       ]
+    },
+    {
+      "type": "Text",
+      "center": [ 25, 30 ],
+      "text": "&"
     }
   ],
   "OR": [
     {
       "type": "Arc",
-      "center": [ 20, 30 ],
-      "radius": 60,
+      "center": [ 15, 30 ],
+      "radius": 35,
       "startAngle": 270,
       "endAngle": 90
     },
     {
       "type": "Arc",
-      "center": [ 0, 30 ],
-      "radius": 60,
+      "center": [ -5, 30 ],
+      "radius": 35,
       "startAngle": 270,
       "endAngle": 90
     },
     {
       "type": "Line",
       "pts": [
-        [ -30, 15 ],
-        [ 0, 15 ]
+        [ -20, 20 ],
+        [ -5, 20 ]
       ]
     },
     {
       "type": "Line",
       "pts": [
-        [ -30, 45 ],
-        [ 0, 45 ]
+        [ -20, 40 ],
+        [ -5, 40 ]
       ]
     },
     {
       "type": "Line",
       "pts": [
-        [ 70, 30 ],
-        [ 90, 30 ]
+        [ 50, 30 ],
+        [ 65, 30 ]
       ]
+    },
+    {
+      "type": "Text",
+      "center": [ 25, 30 ],
+      "text": "≥1"
     }
   ],
   "NOT": [
@@ -95,27 +164,182 @@
       "pts": [
         [ 0, 0 ],
         [ 0, 60 ],
-        [ 60, 30 ]
+        [ 50, 30 ]
       ]
     },
     {
       "type": "Circle",
-      "center": [ 70, 30 ],
-      "radius": 6
+      "center": [ 55, 30 ],
+      "radius": 5
     },
     {
       "type": "Line",
       "pts": [
-        [ -20, 30 ],
+        [ -15, 30 ],
         [ 0, 30 ]
       ]
     },
     {
       "type": "Line",
       "pts": [
-        [ 76, 30 ],
-        [ 96, 30 ]
+        [ 60, 30 ],
+        [ 75, 30 ]
       ]
+    },
+    {
+      "type": "Text",
+      "center": [ 20, 30 ],
+      "text": "1"
+    }
+  ],
+  "NOR": [
+    {
+      "type": "Arc",
+      "center": [ 15, 30 ],
+      "radius": 35,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Arc",
+      "center": [ -5, 30 ],
+      "radius": 35,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Circle",
+      "center": [ 55, 30 ],
+      "radius": 5
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -20, 20 ],
+        [ -5, 20 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -20, 40 ],
+        [ -5, 40 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 60, 30 ],
+        [ 75, 30 ]
+      ]
+    },
+    {
+      "type": "Text",
+      "center": [ 25, 30 ],
+      "text": "≥1"
+    }
+  ],
+  "XOR": [
+    {
+      "type": "Arc",
+      "center": [ 15, 30 ],
+      "radius": 35,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Arc",
+      "center": [ -5, 30 ],
+      "radius": 35,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Arc",
+      "center": [ -10, 30 ],
+      "radius": 35,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -25, 20 ],
+        [ -10, 20 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -25, 40 ],
+        [ -10, 40 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 50, 30 ],
+        [ 65, 30 ]
+      ]
+    },
+    {
+      "type": "Text",
+      "center": [ 25, 30 ],
+      "text": "=1"
+    }
+  ],
+  "XNOR": [
+    {
+      "type": "Arc",
+      "center": [ 15, 30 ],
+      "radius": 35,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Arc",
+      "center": [ -5, 30 ],
+      "radius": 35,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Arc",
+      "center": [ -10, 30 ],
+      "radius": 35,
+      "startAngle": 270,
+      "endAngle": 90
+    },
+    {
+      "type": "Circle",
+      "center": [ 65, 30 ],
+      "radius": 5
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -25, 20 ],
+        [ -10, 20 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ -25, 40 ],
+        [ -10, 40 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 70, 30 ],
+        [ 85, 30 ]
+      ]
+    },
+    {
+      "type": "Text",
+      "center": [ 25, 30 ],
+      "text": "=1"
     }
   ],
   "BUFFER": [
@@ -124,226 +348,102 @@
       "pts": [
         [ 0, 0 ],
         [ 0, 60 ],
-        [ 60, 30 ]
+        [ 50, 30 ]
       ]
     },
     {
       "type": "Line",
       "pts": [
-        [ -20, 30 ],
+        [ -15, 30 ],
         [ 0, 30 ]
       ]
     },
     {
       "type": "Line",
       "pts": [
-        [ 60, 30 ],
-        [ 80, 30 ]
+        [ 50, 30 ],
+        [ 65, 30 ]
       ]
-    }
-  ],
-  "XOR": [
+    },
     {
-      "type": "Arc",
+      "type": "Text",
       "center": [ 20, 30 ],
-      "radius": 60,
-      "startAngle": 270,
-      "endAngle": 90
-    },
-    {
-      "type": "Arc",
-      "center": [ 0, 30 ],
-      "radius": 60,
-      "startAngle": 270,
-      "endAngle": 90
-    },
-    {
-      "type": "Arc",
-      "center": [ -10, 30 ],
-      "radius": 60,
-      "startAngle": 270,
-      "endAngle": 90
-    },
-    {
-      "type": "Line",
-      "pts": [
-        [ -35, 15 ],
-        [ 0, 15 ]
-      ]
-    },
-    {
-      "type": "Line",
-      "pts": [
-        [ -35, 45 ],
-        [ 0, 45 ]
-      ]
-    },
-    {
-      "type": "Line",
-      "pts": [
-        [ 70, 30 ],
-        [ 90, 30 ]
-      ]
+      "text": "1"
     }
   ],
   "LED": [
     {
       "type": "Circle",
-      "center": [ 40, 40 ],
-      "radius": 30
+      "center": [ 30, 30 ],
+      "radius": 20
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 10, 30 ],
+        [ 0, 30 ]
+      ]
+    },
+    {
+      "type": "Line",
+      "pts": [
+        [ 50, 30 ],
+        [ 60, 30 ]
+      ]
+    },
+    {
+      "type": "Polygon",
+      "pts": [
+        [ 25, 15 ],
+        [ 35, 15 ],
+        [ 40, 30 ],
+        [ 35, 45 ],
+        [ 25, 45 ],
+        [ 20, 30 ]
+      ]
     },
     {
       "type": "Text",
-      "center": [ 30, 80 ],
+      "center": [ 30, 55 ],
       "text": "LED"
     }
   ],
-  "NAND": [
+  "开关": [
     {
-      "type": "Line",
-      "pts": [
-        [ 0, 0 ],
-        [ 40, 0 ]
-      ]
+      "type": "Circle",
+      "center": [ 0, 0 ],
+      "radius": 3
     },
     {
-      "type": "Line",
-      "pts": [
-        [ 0, 60 ],
-        [ 40, 60 ]
-      ]
+      "type": "Circle",
+      "center": [ 30, 0 ],
+      "radius": 3
     },
     {
       "type": "Line",
       "pts": [
         [ 0, 0 ],
-        [ 0, 60 ]
-      ]
-    },
-    {
-      "type": "Arc",
-      "center": [ 40, 30 ],
-      "radius": 30,
-      "startAngle": 270,
-      "endAngle": 90
-    },
-    {
-      "type": "Line",
-      "pts": [
-        [ -20, 15 ],
-        [ 0, 15 ]
+        [ 15, -20 ]
       ]
     },
     {
       "type": "Line",
       "pts": [
-        [ -20, 45 ],
-        [ 0, 45 ]
+        [ 15, -20 ],
+        [ 30, 0 ]
       ]
     },
     {
-      "type": "Line",
+      "type": "Rectangle",
       "pts": [
-        [ 70, 30 ],
-        [ 90, 30 ]
+        [ 12, -25 ],
+        [ 18, -15 ]
       ]
     },
     {
-      "type": "Circle",
-      "center": [ 95, 30 ],
-      "radius": 6
-    }
-  ],
-  "NOR": [
-    {
-      "type": "Arc",
-      "center": [ 20, 30 ],
-      "radius": 60,
-      "startAngle": 270,
-      "endAngle": 90
-    },
-    {
-      "type": "Arc",
-      "center": [ 0, 30 ],
-      "radius": 60,
-      "startAngle": 270,
-      "endAngle": 90
-    },
-    {
-      "type": "Line",
-      "pts": [
-        [ -30, 15 ],
-        [ 0, 15 ]
-      ]
-    },
-    {
-      "type": "Line",
-      "pts": [
-        [ -30, 45 ],
-        [ 0, 45 ]
-      ]
-    },
-    {
-      "type": "Line",
-      "pts": [
-        [ 70, 30 ],
-        [ 90, 30 ]
-      ]
-    },
-    {
-      "type": "Circle",
-      "center": [ 95, 30 ],
-      "radius": 6
-    }
-  ],
-  "XNOR": [
-    {
-      "type": "Arc",
-      "center": [ 20, 30 ],
-      "radius": 60,
-      "startAngle": 270,
-      "endAngle": 90
-    },
-    {
-      "type": "Arc",
-      "center": [ 0, 30 ],
-      "radius": 60,
-      "startAngle": 270,
-      "endAngle": 90
-    },
-    {
-      "type": "Arc",
-      "center": [ -10, 30 ],
-      "radius": 60,
-      "startAngle": 270,
-      "endAngle": 90
-    },
-    {
-      "type": "Line",
-      "pts": [
-        [ -35, 15 ],
-        [ 0, 15 ]
-      ]
-    },
-    {
-      "type": "Line",
-      "pts": [
-        [ -35, 45 ],
-        [ 0, 45 ]
-      ]
-    },
-    {
-      "type": "Line",
-      "pts": [
-        [ 70, 30 ],
-        [ 90, 30 ]
-      ]
-    },
-    {
-      "type": "Circle",
-      "center": [ 95, 30 ],
-      "radius": 6
+      "type": "Text",
+      "center": [ 15, -30 ],
+      "text": "开关"
     }
   ]
 }
-

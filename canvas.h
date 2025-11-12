@@ -6,15 +6,15 @@
 
 class MyDrawPanel : public wxPanel {
 public:
-    // ÔÚÀàÄÚ²¿¶¨ÒåÁ¬ÏßÄ£Ê½Ã¶¾Ù
+    // åœ¨ç±»å†…éƒ¨å®šä¹‰è¿çº¿æ¨¡å¼æšä¸¾
     enum WireMode {
-        WIRE_STRAIGHT,   // Ö±ÏßÄ£Ê½
-        WIRE_ORTHOGONAL  // Ö±½ÇÄ£Ê½
+        WIRE_STRAIGHT,   // ç›´çº¿æ¨¡å¼
+        WIRE_ORTHOGONAL  // ç›´è§’æ¨¡å¼
     };
 
     MyDrawPanel(wxWindow* parent);
 
-    // »æÍ¼²Ù×÷
+    // ç»˜å›¾æ“ä½œ
     void AddShape(const wxString& shape);
     void RemoveLastShape();
     void DeleteSelected();
@@ -28,23 +28,23 @@ public:
     void ZoomOut();
     void TogglePins();
 
-    // Á¬ÏßÄ£Ê½²Ù×÷
+    // è¿çº¿æ¨¡å¼æ“ä½œ
     void SetWireMode(WireMode mode) { m_wireMode = mode; }
     WireMode GetWireMode() const { return m_wireMode; }
     void ToggleWireMode();
 
-    // ¶Ïµã²Ù×÷
+    // æ–­ç‚¹æ“ä½œ
     void AddBreakpoint(const wxPoint& position, int wireIndex);
     bool IsPointNearBreakpoint(const wxPoint& point, int tolerance = 6);
     int FindBreakpointAtPoint(const wxPoint& point, int tolerance = 6);
     void UpdateWiresFromBreakpoints();
 
-    // Íø±í²Ù×÷
+    // ç½‘è¡¨æ“ä½œ
     Netlist GenerateNetlist() const;
     void ImportFromNetlist(const Netlist& netlist);
     void ShowNetlistPreview();
 
-    // ×´Ì¬¹ÜÀí
+    // çŠ¶æ€ç®¡ç†
     struct DrawPanelState {
         std::vector<Gate> gates;
         std::vector<Wire> wires;
@@ -57,7 +57,7 @@ public:
     DrawPanelState GetState() const;
     void SetState(const DrawPanelState& state);
 
-    // Êı¾İ·ÃÎÊ
+    // æ•°æ®è®¿é—®
     std::vector<wxString> GetShapes() const;
     void SetShapes(const std::vector<wxString>& shapes);
     std::vector<Gate> GetGates() const;
@@ -68,10 +68,10 @@ public:
 private:
     std::vector<Gate> m_gates;
     std::vector<Wire> m_wires;
-    std::vector<Breakpoint> m_breakpoints; // ¶ÏµãÁĞ±í
+    std::vector<Breakpoint> m_breakpoints; // æ–­ç‚¹åˆ—è¡¨
     double m_scale;
 
-    // ½»»¥×´Ì¬
+    // äº¤äº’çŠ¶æ€
     bool m_isDrawingWire;
     wxPoint m_wireStart;
     wxPoint m_currentMouse;
@@ -82,13 +82,13 @@ private:
     wxPoint m_dragOffset;
     int m_selectedIndex;
     int m_selectedWireIndex;
-    int m_selectedBreakpointIndex; // Ñ¡ÖĞµÄ¶ÏµãË÷Òı
+    int m_selectedBreakpointIndex; // é€‰ä¸­çš„æ–­ç‚¹ç´¢å¼•
     bool m_showGrid;
     bool m_showPins;
     int m_gridSize;
-    WireMode m_wireMode;  // Á¬ÏßÄ£Ê½
+    WireMode m_wireMode;  // è¿çº¿æ¨¡å¼
 
-    // Òı½ÅÎü¸½
+    // å¼•è„šå¸é™„
     struct PinConnection {
         int gateIndex;
         int pinIndex;
@@ -98,7 +98,7 @@ private:
     PinConnection m_connectedStartPin;
     PinConnection m_connectedEndPin;
 
-    // »æÖÆ·½·¨
+    // ç»˜åˆ¶æ–¹æ³•
     void DrawGate(wxDC& dc, const Gate& gate);
     void DrawShape(wxDC& dc, const Shape& s, const wxPoint& pos);
     void DrawPin(wxDC& dc, const Pin& pin, const wxPoint& gatePos, bool isHovered = false);
@@ -106,38 +106,39 @@ private:
     void DrawGrid(wxDC& dc);
     wxRect GetGateBBox(const Gate& g) const;
 
-    // Ö±½ÇÁ¬Ïß»æÖÆ·½·¨
+    // ç›´è§’è¿çº¿ç»˜åˆ¶æ–¹æ³•
     void DrawOrthogonalWire(wxGraphicsContext* gc, const Wire& wire);
     void DrawOrthogonalWire(wxGraphicsContext* gc, const wxPoint& start, const wxPoint& end);
 
-    // ¹¤¾ß·½·¨
+    // å·¥å…·æ–¹æ³•
     bool IsPointNearStraightLine(const wxPoint& point, const wxPoint& lineStart, const wxPoint& lineEnd, int tolerance);
     bool IsPointNearLine(const wxPoint& point, const Wire& wire, int tolerance = 5);
     PinConnection FindNearestPin(const wxPoint& point, int tolerance = 8);
-    PinConnection FindNearestBreakpointPin(const wxPoint& point, int tolerance = 8); // ĞÂÔö£º²éÕÒ¶ÏµãÒı½Å
+    PinConnection FindNearestBreakpointPin(const wxPoint& point, int tolerance = 8); // æ–°å¢ï¼šæŸ¥æ‰¾æ–­ç‚¹å¼•è„š
     wxPoint ToLogical(const wxPoint& devicePt) const;
     wxPoint SnapToGrid(const wxPoint& point);
     wxPoint SnapToPin(const wxPoint& point);
     wxPoint SnapToBreakpoint(const wxPoint& point);
     wxPoint CalculatePointOnWire(const Wire& wire, double t);
 
-    // ĞÂÔö£º¼¸ºÎ¼ÆËã¹¤¾ß·½·¨
+    // æ–°å¢ï¼šå‡ ä½•è®¡ç®—å·¥å…·æ–¹æ³•
     wxPoint FindClosestPointOnLine(const wxPoint& lineStart, const wxPoint& lineEnd, const wxPoint& point);
     double CalculateParameterOnLine(const wxPoint& lineStart, const wxPoint& lineEnd, const wxPoint& pointOnLine);
     wxPoint FindClosestPointOnOrthogonalLine(const Wire& wire, const wxPoint& point, double& outT);
     double CalculateDistance(const wxPoint& p1, const wxPoint& p2);
 
-    // Á¬Ïß¸úËæÒÆ¶¯
+    // è¿çº¿è·Ÿéšç§»åŠ¨
     void UpdateConnectedWires(int gateIndex);
-    void UpdateWiresFromBreakpoint(int breakpointIndex); // ĞÂÔö£º¸üĞÂ¶ÏµãÁ¬Ïß
+    void UpdateWiresFromBreakpoint(int breakpointIndex); // æ–°å¢ï¼šæ›´æ–°æ–­ç‚¹è¿çº¿
 
-    // ÊÂ¼ş´¦Àí
+    // äº‹ä»¶å¤„ç†
     void OnPaint(wxPaintEvent&);
     void OnMouseDown(wxMouseEvent& evt);
     void OnRightClick(wxMouseEvent& evt);
     void OnMouseMove(wxMouseEvent& evt);
     void OnMouseUp(wxMouseEvent&);
     void OnKeyDown(wxKeyEvent& evt);
+    void UpdateBreakpointsOnWire(int wireIndex);
 
     wxDECLARE_EVENT_TABLE();
 };

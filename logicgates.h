@@ -10,10 +10,10 @@
 
 using json = nlohmann::json;
 
-// ×Ô¶¨ÒåÊÂ¼şÀàĞÍ - Ö»ÉùÃ÷²»¶¨Òå
+// è‡ªå®šä¹‰äº‹ä»¶ç±»å‹ - åªå£°æ˜ä¸å®šä¹‰
 wxDECLARE_EVENT(MY_CUSTOM_EVENT, wxCommandEvent);
 
-// ×Ô¶¨Òå ID
+// è‡ªå®šä¹‰ ID
 enum {
     ID_SHOW_STATUSBAR = wxID_HIGHEST + 1,
     ID_SHOW_GRID,
@@ -25,51 +25,54 @@ enum {
     ID_GENERATE_NETLIST,
     ID_SHOW_PINS,
     ID_EXPORT_BOOKSHELF,
-    ID_ADD_BREAKPOINT,  // Ìí¼Ó¶Ïµã
-    ID_DELETE_BREAKPOINT // É¾³ı¶Ïµã
+    ID_ADD_BREAKPOINT,  // æ·»åŠ æ–­ç‚¹
+    ID_DELETE_BREAKPOINT // åˆ é™¤æ–­ç‚¹
 };
 
-// ÊôĞÔ½á¹¹Ìå
+// å±æ€§ç»“æ„ä½“
 struct Property {
     wxString name;
     wxString value;
     wxString type; // "string", "int", "double", "bool"
 };
 
-// Òı½Å½á¹¹Ìå
+// å¼•è„šç»“æ„ä½“
 struct Pin {
-    wxString name; // Òı½ÅÃû³Æ£¬Èç "in1", "in2", "out"
-    wxPoint relativePos; // Ïà¶ÔÓÚ×é¼ş×óÉÏ½ÇµÄ×ø±ê
-    bool isInput; // ÊÇÊäÈëÒı½Å»¹ÊÇÊä³öÒı½Å
+    wxString name; // å¼•è„šåç§°ï¼Œå¦‚ "in1", "in2", "out"
+    wxPoint relativePos; // ç›¸å¯¹äºç»„ä»¶å·¦ä¸Šè§’çš„åæ ‡
+    bool isInput; // æ˜¯è¾“å…¥å¼•è„šè¿˜æ˜¯è¾“å‡ºå¼•è„š
 
-    // »ñÈ¡¾ø¶ÔÎ»ÖÃ
+    // è·å–ç»å¯¹ä½ç½®
     wxPoint GetAbsolutePos(const wxPoint& gatePos) const {
         return wxPoint(gatePos.x + relativePos.x, gatePos.y + relativePos.y);
     }
 };
 
-// ¶Ïµã½á¹¹Ìå
+// æ–­ç‚¹ç»“æ„ä½“
+// ä¿®æ”¹ Breakpoint ç»“æ„ï¼Œæ·»åŠ æ›´å¤šä¿¡æ¯
 struct Breakpoint {
-    wxPoint position; // ¶ÏµãÎ»ÖÃ
-    int wireIndex;    // ËùÊôÁ¬ÏßË÷Òı
-    double t;         // ÔÚÏß¶ÎÉÏµÄ²ÎÊıÎ»ÖÃ (0-1)
-    std::vector<int> connectedWires; // Á¬½ÓµÄÁ¬ÏßË÷Òı
-    Pin pin;          // ½«¶Ïµã×÷ÎªÌØÊâÒı½Å
-    wxString breakpointId; // ¶ÏµãÎ¨Ò»±êÊ¶
+    wxPoint position; // æ–­ç‚¹ä½ç½®
+    int wireIndex;    // æ‰€å±è¿çº¿ç´¢å¼•
+    double t;         // åœ¨çº¿æ®µä¸Šçš„å‚æ•°ä½ç½® (0-1)
+    std::vector<int> connectedWires; // è¿æ¥çš„è¿çº¿ç´¢å¼•
+    Pin pin;          // å°†æ–­ç‚¹ä½œä¸ºç‰¹æ®Šå¼•è„š
+    wxString breakpointId; // æ–­ç‚¹å”¯ä¸€æ ‡è¯†
+    bool isOnWire;    // æ˜¯å¦åœ¨è¿çº¿ä¸Šï¼ˆç›¸å¯¹äºç‹¬ç«‹æ–­ç‚¹ï¼‰
 };
-// Íø±í½ÚµãÁ¬½Ó
+
+// ç½‘è¡¨èŠ‚ç‚¹è¿æ¥
 struct NetConnection {
     wxString componentId;
     wxString pinName;
 };
 
-// Íø±í½Úµã
+// ç½‘è¡¨èŠ‚ç‚¹
 struct NetNode {
     wxString netName;
     std::vector<NetConnection> connections;
 };
 
-// Íø±í×é¼ş
+// ç½‘è¡¨ç»„ä»¶
 struct NetComponent {
     wxString componentId;
     wxString componentType;
@@ -78,7 +81,7 @@ struct NetComponent {
     std::vector<Pin> pins;
 };
 
-// Íø±í½á¹¹
+// ç½‘è¡¨ç»“æ„
 struct Netlist {
     wxString designName;
     std::vector<NetComponent> components;
@@ -89,19 +92,19 @@ struct Netlist {
 struct Gate {
     wxString type;
     wxPoint pos;
-    std::vector<Property> properties; // ÊôĞÔ±í
-    std::vector<Pin> pins; // Òı½ÅĞÅÏ¢
+    std::vector<Property> properties; // å±æ€§è¡¨
+    std::vector<Pin> pins; // å¼•è„šä¿¡æ¯
 };
 
 struct Wire {
     wxPoint start;
     wxPoint end;
-    wxString startCompId; // ÆğÊ¼×é¼şID»ò¶ÏµãID
-    wxString startPinName; // ÆğÊ¼Òı½ÅÃû³Æ
-    wxString endCompId;   // ½áÊø×é¼şID»ò¶ÏµãID
-    wxString endPinName;  // ½áÊøÒı½ÅÃû³Æ
-    bool isSelected = false; // Ñ¡ÖĞ×´Ì¬
-    bool isConnectedToBreakpoint = false; // ÊÇ·ñÁ¬½Óµ½¶Ïµã
+    wxString startCompId; // èµ·å§‹ç»„ä»¶IDæˆ–æ–­ç‚¹ID
+    wxString startPinName; // èµ·å§‹å¼•è„šåç§°
+    wxString endCompId;   // ç»“æŸç»„ä»¶IDæˆ–æ–­ç‚¹ID
+    wxString endPinName;  // ç»“æŸå¼•è„šåç§°
+    bool isSelected = false; // é€‰ä¸­çŠ¶æ€
+    bool isConnectedToBreakpoint = false; // æ˜¯å¦è¿æ¥åˆ°æ–­ç‚¹
 };
 
 enum class ShapeType { Line, Arc, Circle, Polygon, Text, Polyline, Rectangle };
@@ -116,13 +119,13 @@ struct Shape {
     wxString text;
 };
 
-// ÉùÃ÷È«¾ÖĞÎ×´¿â
+// å£°æ˜å…¨å±€å½¢çŠ¶åº“
 extern std::map<wxString, std::vector<Shape>> shapeLibrary;
 
-// ÉùÃ÷È«¾ÖÒı½Å¿â
+// å£°æ˜å…¨å±€å¼•è„šåº“
 extern std::map<wxString, std::vector<Pin>> pinLibrary;
 
-// ÊôĞÔ±à¼­¶Ô»°¿ò
+// å±æ€§ç¼–è¾‘å¯¹è¯æ¡†
 class PropertyDialog : public wxDialog {
 public:
     PropertyDialog(wxWindow* parent, Gate& gate);
@@ -135,24 +138,24 @@ private:
     void OnOK(wxCommandEvent& event);
 };
 
-// JSON ¼ÓÔØº¯Êı
+// JSON åŠ è½½å‡½æ•°
 void LoadShapesFromJson(const std::string& filename);
 void LoadPinsFromJson(const std::string& filename);
 
-// Ó²±àÂë³õÊ¼»¯º¯Êı
+// ç¡¬ç¼–ç åˆå§‹åŒ–å‡½æ•°
 void InitializeHardcodedShapes();
 void InitializeHardcodedPins();
 
-// Íø±í¹¤¾ßº¯Êı
+// ç½‘è¡¨å·¥å…·å‡½æ•°
 Netlist GenerateNetlist(const std::vector<Gate>& gates, const std::vector<Wire>& wires);
 bool ExportNetlistToFile(const wxString& filename, const Netlist& netlist);
 bool ImportNetlistFromFile(const wxString& filename, Netlist& netlist);
 
-// BookShelf¸ñÊ½µ¼³öº¯Êı
+// BookShelfæ ¼å¼å¯¼å‡ºå‡½æ•°
 bool ExportBookShelfNodeFile(const wxString& filename, const Netlist& netlist);
 bool ExportBookShelfNetFile(const wxString& filename, const Netlist& netlist);
 bool ExportBookShelfFiles(const wxString& baseFilename, const Netlist& netlist);
 
-// BookShelf×é¼ş³ß´çÓ³Éä
+// BookShelfç»„ä»¶å°ºå¯¸æ˜ å°„
 extern std::map<wxString, std::pair<double, double>> bookShelfComponentSizes;
 // [file content end]

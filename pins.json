@@ -1,0 +1,178 @@
+{
+  "AND": [
+    {
+      "name": "in1",
+      "x": -15,
+      "y": 20,
+      "isInput": true
+    },
+    {
+      "name": "in2",
+      "x": -15,
+      "y": 40,
+      "isInput": true
+    },
+    {
+      "name": "out",
+      "x": 85,
+      "y": 30,
+      "isInput": false
+    }
+  ],
+  "NAND": [
+    {
+      "name": "in1",
+      "x": -15,
+      "y": 20,
+      "isInput": true
+    },
+    {
+      "name": "in2",
+      "x": -15,
+      "y": 40,
+      "isInput": true
+    },
+    {
+      "name": "out",
+      "x": 95,
+      "y": 30,
+      "isInput": false
+    }
+  ],
+  "OR": [
+    {
+      "name": "in1",
+      "x": -20,
+      "y": 20,
+      "isInput": true
+    },
+    {
+      "name": "in2",
+      "x": -20,
+      "y": 40,
+      "isInput": true
+    },
+    {
+      "name": "out",
+      "x": 65,
+      "y": 30,
+      "isInput": false
+    }
+  ],
+  "NOT": [
+    {
+      "name": "in",
+      "x": -15,
+      "y": 30,
+      "isInput": true
+    },
+    {
+      "name": "out",
+      "x": 75,
+      "y": 30,
+      "isInput": false
+    }
+  ],
+  "NOR": [
+    {
+      "name": "in1",
+      "x": -20,
+      "y": 20,
+      "isInput": true
+    },
+    {
+      "name": "in2",
+      "x": -20,
+      "y": 40,
+      "isInput": true
+    },
+    {
+      "name": "out",
+      "x": 75,
+      "y": 30,
+      "isInput": false
+    }
+  ],
+  "XOR": [
+    {
+      "name": "in1",
+      "x": -25,
+      "y": 20,
+      "isInput": true
+    },
+    {
+      "name": "in2",
+      "x": -25,
+      "y": 40,
+      "isInput": true
+    },
+    {
+      "name": "out",
+      "x": 65,
+      "y": 30,
+      "isInput": false
+    }
+  ],
+  "XNOR": [
+    {
+      "name": "in1",
+      "x": -25,
+      "y": 20,
+      "isInput": true
+    },
+    {
+      "name": "in2",
+      "x": -25,
+      "y": 40,
+      "isInput": true
+    },
+    {
+      "name": "out",
+      "x": 85,
+      "y": 30,
+      "isInput": false
+    }
+  ],
+  "BUFFER": [
+    {
+      "name": "in",
+      "x": -15,
+      "y": 30,
+      "isInput": true
+    },
+    {
+      "name": "out",
+      "x": 65,
+      "y": 30,
+      "isInput": false
+    }
+  ],
+  "LED": [
+    {
+      "name": "in",
+      "x": 0,
+      "y": 30,
+      "isInput": true
+    },
+    {
+      "name": "out",
+      "x": 60,
+      "y": 30,
+      "isInput": false
+    }
+  ],
+  "    ": [
+    {
+      "name": "in",
+      "x": 0,
+      "y": 0,
+      "isInput": true
+    },
+    {
+      "name": "out",
+      "x": 30,
+      "y": 0,
+      "isInput": false
+    }
+  ]
+}

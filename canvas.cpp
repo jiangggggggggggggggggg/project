@@ -35,7 +35,7 @@ MyDrawPanel::MyDrawPanel(wxWindow* parent)
     Bind(wxEVT_MOTION, &MyDrawPanel::OnMouseMove, this);
     Bind(wxEVT_KEY_DOWN, &MyDrawPanel::OnKeyDown, this);
 
-    // Ö±½ÓÊ¹ÓÃÓ²±àÂë¶¨Òå
+    // ç›´æ¥ä½¿ç”¨ç¡¬ç¼–ç å®šä¹‰
     if (shapeLibrary.empty()) {
         InitializeHardcodedShapes();
     }
@@ -52,24 +52,24 @@ void MyDrawPanel::AddShape(const wxString& shape) {
     newGate.type = shape;
     newGate.pos = wxPoint(50 + (m_gates.size() % 3) * 150, 50 + (m_gates.size() / 3) * 150);
 
-    // Îª²»Í¬×é¼şÀàĞÍÉèÖÃÄ¬ÈÏÊôĞÔ
+    // ä¸ºä¸åŒç»„ä»¶ç±»å‹è®¾ç½®é»˜è®¤å±æ€§
     if (shape == "LED") {
         Property colorProp;
-        colorProp.name = "ÑÕÉ«";
-        colorProp.value = "ºìÉ«";
+        colorProp.name = "é¢œè‰²";
+        colorProp.value = "çº¢è‰²";
         colorProp.type = "string";
         newGate.properties.push_back(colorProp);
 
         Property voltageProp;
-        voltageProp.name = "¹¤×÷µçÑ¹";
+        voltageProp.name = "å·¥ä½œç”µå‹";
         voltageProp.value = "3.3";
         voltageProp.type = "double";
         newGate.properties.push_back(voltageProp);
     }
-    else if (shape == "¿ª¹Ø") {
+    else if (shape == "å¼€å…³") {
         Property stateProp;
-        stateProp.name = "³õÊ¼×´Ì¬";
-        stateProp.value = "¹Ø±Õ";
+        stateProp.name = "åˆå§‹çŠ¶æ€";
+        stateProp.value = "å…³é—­";
         stateProp.type = "string";
         newGate.properties.push_back(stateProp);
     }
@@ -77,13 +77,13 @@ void MyDrawPanel::AddShape(const wxString& shape) {
         shape == "XOR" || shape == "NAND" || shape == "NOR" ||
         shape == "XNOR" || shape == "BUFFER") {
         Property delayProp;
-        delayProp.name = "´«²¥ÑÓ³Ù";
+        delayProp.name = "ä¼ æ’­å»¶è¿Ÿ";
         delayProp.value = "10";
         delayProp.type = "int";
         newGate.properties.push_back(delayProp);
     }
 
-    // ¼ÓÔØÒı½ÅĞÅÏ¢
+    // åŠ è½½å¼•è„šä¿¡æ¯
     auto pinIt = pinLibrary.find(shape);
     if (pinIt != pinLibrary.end()) {
         newGate.pins = pinIt->second;
@@ -115,7 +115,47 @@ void MyDrawPanel::DeleteSelected() {
 
 void MyDrawPanel::DeleteSelectedWire() {
     if (m_selectedWireIndex >= 0 && m_selectedWireIndex < (int)m_wires.size()) {
-        m_wires.erase(m_wires.begin() + m_selectedWireIndex);
+        int deletedWireIndex = m_selectedWireIndex;
+
+        // åˆ é™¤å‰å…ˆå¤„ç†ç›¸å…³çš„æ–­ç‚¹
+        for (auto it = m_breakpoints.begin(); it != m_breakpoints.end(); ) {
+            // å¦‚æœæ–­ç‚¹åœ¨è¿™æ¡è¢«åˆ é™¤çš„è¿çº¿ä¸Š
+            if (it->wireIndex == deletedWireIndex) {
+                // åˆ é™¤æ‰€æœ‰è¿æ¥åˆ°è¿™ä¸ªæ–­ç‚¹çš„è¿çº¿
+                for (int connectedWireIndex : it->connectedWires) {
+                    if (connectedWireIndex < (int)m_wires.size()) {
+                        m_wires[connectedWireIndex] = Wire(); // æ ‡è®°ä¸ºåˆ é™¤
+                    }
+                }
+                it = m_breakpoints.erase(it);
+            }
+            else {
+                // æ›´æ–°æ–­ç‚¹çš„è¿çº¿ç´¢å¼•ï¼ˆå¦‚æœç´¢å¼•å¤§äºè¢«åˆ é™¤çš„è¿çº¿ï¼‰
+                if (it->wireIndex > deletedWireIndex) {
+                    it->wireIndex--;
+                }
+                // æ›´æ–°æ–­ç‚¹è¿æ¥çš„è¿çº¿ç´¢å¼•
+                for (size_t i = 0; i < it->connectedWires.size(); ) {
+                    if (it->connectedWires[i] > deletedWireIndex) {
+                        it->connectedWires[i]--;
+                        i++;
+                    }
+                    else if (it->connectedWires[i] == deletedWireIndex) {
+                        it->connectedWires.erase(it->connectedWires.begin() + i);
+                    }
+                    else {
+                        i++;
+                    }
+                }
+                ++it;
+            }
+        }
+
+        // ç§»é™¤æ ‡è®°ä¸ºåˆ é™¤çš„è¿çº¿
+        m_wires.erase(std::remove_if(m_wires.begin(), m_wires.end(),
+            [](const Wire& w) { return w.start == wxPoint() && w.end == wxPoint(); }),
+            m_wires.end());
+
         m_selectedWireIndex = -1;
         Refresh();
     }
@@ -123,15 +163,15 @@ void MyDrawPanel::DeleteSelectedWire() {
 
 void MyDrawPanel::DeleteSelectedBreakpoint() {
     if (m_selectedBreakpointIndex >= 0 && m_selectedBreakpointIndex < (int)m_breakpoints.size()) {
-        // É¾³ıÁ¬½Óµ½Õâ¸ö¶ÏµãµÄËùÓĞÁ¬Ïß
+        // åˆ é™¤è¿æ¥åˆ°è¿™ä¸ªæ–­ç‚¹çš„æ‰€æœ‰è¿çº¿
         const Breakpoint& bp = m_breakpoints[m_selectedBreakpointIndex];
         for (int wireIndex : bp.connectedWires) {
             if (wireIndex >= 0 && wireIndex < (int)m_wires.size()) {
-                m_wires[wireIndex] = Wire(); // ±ê¼ÇÎªÉ¾³ı
+                m_wires[wireIndex] = Wire(); // æ ‡è®°ä¸ºåˆ é™¤
             }
         }
 
-        // ÒÆ³ı±ê¼ÇÎªÉ¾³ıµÄÁ¬Ïß
+        // ç§»é™¤æ ‡è®°ä¸ºåˆ é™¤çš„è¿çº¿
         m_wires.erase(std::remove_if(m_wires.begin(), m_wires.end(),
             [](const Wire& w) { return w.start == wxPoint() && w.end == wxPoint(); }),
             m_wires.end());
@@ -176,7 +216,7 @@ void MyDrawPanel::ToggleWireMode() {
     Refresh();
 }
 
-// ¶Ïµã²Ù×÷ - ÓÅ»¯°æ±¾
+// æ–­ç‚¹æ“ä½œ - ä¼˜åŒ–ç‰ˆæœ¬
 void MyDrawPanel::AddBreakpoint(const wxPoint& position, int wireIndex) {
     if (wireIndex < 0 || wireIndex >= (int)m_wires.size()) {
         return;
@@ -184,7 +224,7 @@ void MyDrawPanel::AddBreakpoint(const wxPoint& position, int wireIndex) {
 
     const Wire& wire = m_wires[wireIndex];
 
-    // ¼ÆËãÔÚÏß¶ÎÉÏµÄ×¼È·Î»ÖÃ
+    // è®¡ç®—åœ¨çº¿æ®µä¸Šçš„å‡†ç¡®ä½ç½®å’Œå‚æ•°t
     wxPoint accuratePoint;
     double t = 0.0;
 
@@ -196,7 +236,7 @@ void MyDrawPanel::AddBreakpoint(const wxPoint& position, int wireIndex) {
         accuratePoint = FindClosestPointOnOrthogonalLine(wire, position, t);
     }
 
-    // ´´½¨¶ÏµãÒı½Å
+    // åˆ›å»ºæ–­ç‚¹å¼•è„š
     Pin breakpointPin;
     breakpointPin.name = "breakpoint";
     breakpointPin.relativePos = wxPoint(0, 0);
@@ -208,17 +248,18 @@ void MyDrawPanel::AddBreakpoint(const wxPoint& position, int wireIndex) {
     bp.t = std::max(0.0, std::min(1.0, t));
     bp.pin = breakpointPin;
     bp.breakpointId = wxString::Format("BP%d", (int)m_breakpoints.size() + 1);
+    bp.isOnWire = true;  // æ ‡è®°ä¸ºè¿çº¿ä¸Šçš„æ–­ç‚¹
 
     m_breakpoints.push_back(bp);
     Refresh();
 }
 
-// ¼ì²éµãÊÇ·ñ¿¿½ü¶Ïµã
+// æ£€æŸ¥ç‚¹æ˜¯å¦é è¿‘æ–­ç‚¹
 bool MyDrawPanel::IsPointNearBreakpoint(const wxPoint& point, int tolerance) {
     return FindBreakpointAtPoint(point, tolerance) != -1;
 }
 
-// ²éÕÒµã¸½½üµÄ¶Ïµã
+// æŸ¥æ‰¾ç‚¹é™„è¿‘çš„æ–­ç‚¹
 int MyDrawPanel::FindBreakpointAtPoint(const wxPoint& point, int tolerance) {
     for (size_t i = 0; i < m_breakpoints.size(); ++i) {
         const Breakpoint& bp = m_breakpoints[i];
@@ -230,7 +271,7 @@ int MyDrawPanel::FindBreakpointAtPoint(const wxPoint& point, int tolerance) {
     return -1;
 }
 
-// ¼ÆËãÏß¶ÎÉÏµÄµã
+// è®¡ç®—çº¿æ®µä¸Šçš„ç‚¹
 wxPoint MyDrawPanel::CalculatePointOnWire(const Wire& wire, double t) {
     t = std::max(0.0, std::min(1.0, t));
     return wxPoint(
@@ -239,7 +280,7 @@ wxPoint MyDrawPanel::CalculatePointOnWire(const Wire& wire, double t) {
     );
 }
 
-// Îü¸½µ½¶Ïµã
+// å¸é™„åˆ°æ–­ç‚¹
 wxPoint MyDrawPanel::SnapToBreakpoint(const wxPoint& point) {
     int bpIndex = FindBreakpointAtPoint(point, 10);
     if (bpIndex != -1) {
@@ -248,9 +289,39 @@ wxPoint MyDrawPanel::SnapToBreakpoint(const wxPoint& point) {
     return point;
 }
 
-// ¸üĞÂÁ¬Ïß´Ó¶Ïµã
+// æ›´æ–°è¿çº¿ä»æ–­ç‚¹
 void MyDrawPanel::UpdateWiresFromBreakpoints() {
-    // ÕâÀï¿ÉÒÔÊµÏÖ´Ó¶ÏµãÖØĞÂÉú³ÉÁ¬ÏßµÄÂß¼­
+    // è¿™é‡Œå¯ä»¥å®ç°ä»æ–­ç‚¹é‡æ–°ç”Ÿæˆè¿çº¿çš„é€»è¾‘
+}
+
+// æ–°å¢ï¼šå½“è¿çº¿ç§»åŠ¨æ—¶æ›´æ–°æ‰€æœ‰ç›¸å…³æ–­ç‚¹
+void MyDrawPanel::UpdateBreakpointsOnWire(int wireIndex) {
+    if (wireIndex < 0 || wireIndex >= (int)m_wires.size()) {
+        return;
+    }
+
+    const Wire& wire = m_wires[wireIndex];
+
+    // æŸ¥æ‰¾æ‰€æœ‰åœ¨è¿™æ¡è¿çº¿ä¸Šçš„æ–­ç‚¹
+    for (auto& bp : m_breakpoints) {
+        if (bp.wireIndex == wireIndex && bp.isOnWire) {
+            // æ ¹æ®å‚æ•°té‡æ–°è®¡ç®—æ–­ç‚¹ä½ç½®
+            if (m_wireMode == WIRE_STRAIGHT) {
+                // ç›´çº¿æ¨¡å¼ï¼šç›´æ¥æ ¹æ®tè®¡ç®—ä½ç½®
+                bp.position = CalculatePointOnWire(wire, bp.t);
+            }
+            else {
+                // ç›´è§’æ¨¡å¼ï¼šéœ€è¦é‡æ–°è®¡ç®—åœ¨æŠ˜çº¿ä¸Šçš„ä½ç½®
+                double newT;
+                bp.position = FindClosestPointOnOrthogonalLine(wire, bp.position, newT);
+                bp.t = newT; // æ›´æ–°å‚æ•°t
+            }
+
+            // æ›´æ–°æ‰€æœ‰è¿æ¥åˆ°è¿™ä¸ªæ–­ç‚¹çš„è¿çº¿
+            int bpIndex = (int)(&bp - &m_breakpoints[0]);
+            UpdateWiresFromBreakpoint(bpIndex);
+        }
+    }
 }
 
 MyDrawPanel::DrawPanelState MyDrawPanel::GetState() const {
@@ -350,20 +421,20 @@ void MyDrawPanel::ShowNetlistPreview() {
     Netlist netlist = GenerateNetlist();
 
     wxString previewText;
-    previewText << "Íø±íÔ¤ÀÀ - " << netlist.designName << "\n";
-    previewText << "Éú³ÉÊ±¼ä: " << netlist.timestamp << "\n\n";
+    previewText << "ç½‘è¡¨é¢„è§ˆ - " << netlist.designName << "\n";
+    previewText << "ç”Ÿæˆæ—¶é—´: " << netlist.timestamp << "\n\n";
 
-    previewText << "=== ×é¼şÁĞ±í ===\n";
+    previewText << "=== ç»„ä»¶åˆ—è¡¨ ===\n";
     for (const auto& comp : netlist.components) {
         previewText << comp.componentId << " : " << comp.componentType;
         previewText << " @ (" << comp.position.x << ", " << comp.position.y << ")\n";
 
         for (const auto& pin : comp.pins) {
-            previewText << "  - " << pin.name << " (" << (pin.isInput ? "ÊäÈë" : "Êä³ö") << ")\n";
+            previewText << "  - " << pin.name << " (" << (pin.isInput ? "è¾“å…¥" : "è¾“å‡º") << ")\n";
         }
     }
 
-    previewText << "\n=== ÍøÂçÁ¬½Ó ===\n";
+    previewText << "\n=== ç½‘ç»œè¿æ¥ ===\n";
     for (const auto& node : netlist.nodes) {
         previewText << node.netName << " : ";
         for (size_t i = 0; i < node.connections.size(); ++i) {
@@ -375,14 +446,14 @@ void MyDrawPanel::ShowNetlistPreview() {
         previewText << "\n";
     }
 
-    wxMessageBox(previewText, "Íø±íÔ¤ÀÀ", wxOK | wxICON_INFORMATION, this);
+    wxMessageBox(previewText, "ç½‘è¡¨é¢„è§ˆ", wxOK | wxICON_INFORMATION, this);
 }
 
-// ---------- »æÖÆ·½·¨ ----------
+// ---------- ç»˜åˆ¶æ–¹æ³• ----------
 void MyDrawPanel::DrawGate(wxDC& dc, const Gate& gate) {
     auto it = shapeLibrary.find(gate.type);
     if (it == shapeLibrary.end()) {
-        // »æÖÆÄ¬ÈÏ¾ØĞÎ×÷Îªºó±¸
+        // ç»˜åˆ¶é»˜è®¤çŸ©å½¢ä½œä¸ºåå¤‡
         dc.SetPen(*wxBLACK_PEN);
         dc.SetBrush(*wxTRANSPARENT_BRUSH);
         dc.DrawRectangle(gate.pos.x, gate.pos.y, 80, 60);
@@ -390,12 +461,12 @@ void MyDrawPanel::DrawGate(wxDC& dc, const Gate& gate) {
         return;
     }
 
-    // »æÖÆ×é¼şĞÎ×´
+    // ç»˜åˆ¶ç»„ä»¶å½¢çŠ¶
     for (auto& s : it->second) {
         DrawShape(dc, s, gate.pos);
     }
 
-    // »æÖÆÒı½Å
+    // ç»˜åˆ¶å¼•è„š
     if (m_showPins) {
         for (size_t j = 0; j < gate.pins.size(); ++j) {
             const auto& pin = gate.pins[j];
@@ -405,7 +476,7 @@ void MyDrawPanel::DrawGate(wxDC& dc, const Gate& gate) {
         }
     }
 
-    // »æÖÆÊôĞÔÎÄ±¾
+    // ç»˜åˆ¶å±æ€§æ–‡æœ¬
     if (!gate.properties.empty()) {
         wxFont smallFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
         dc.SetFont(smallFont);
@@ -501,7 +572,7 @@ void MyDrawPanel::DrawPin(wxDC& dc, const Pin& pin, const wxPoint& gatePos, bool
     dc.SetFont(wxNullFont);
 }
 
-// ¶Ïµã»æÖÆ·½·¨ - ÓÅ»¯°æ±¾
+// æ–­ç‚¹ç»˜åˆ¶æ–¹æ³• - ä¼˜åŒ–ç‰ˆæœ¬
 void MyDrawPanel::DrawBreakpoint(wxDC& dc, const Breakpoint& breakpoint, bool isSelected) {
     wxPoint pos = breakpoint.position;
 
@@ -514,10 +585,10 @@ void MyDrawPanel::DrawBreakpoint(wxDC& dc, const Breakpoint& breakpoint, bool is
         dc.SetBrush(wxBrush(wxColour(200, 200, 255)));
     }
 
-    // »æÖÆ¶ÏµãÔ²È¦
+    // ç»˜åˆ¶æ–­ç‚¹åœ†åœˆ
     dc.DrawCircle(pos, 6);
 
-    // »æÖÆÄÚ²¿Ğ¡Ô²µã
+    // ç»˜åˆ¶å†…éƒ¨å°åœ†ç‚¹
     if (isSelected) {
         dc.SetPen(wxPen(wxColour(255, 255, 255), 1));
         dc.SetBrush(wxBrush(wxColour(255, 255, 255)));
@@ -528,7 +599,7 @@ void MyDrawPanel::DrawBreakpoint(wxDC& dc, const Breakpoint& breakpoint, bool is
     }
     dc.DrawCircle(pos, 2);
 
-    // »æÖÆ¶ÏµãID£¨Ğ¡ĞÍÎÄ±¾£©
+    // ç»˜åˆ¶æ–­ç‚¹IDï¼ˆå°å‹æ–‡æœ¬ï¼‰
     wxFont smallFont(6, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
     dc.SetFont(smallFont);
     dc.SetTextForeground(isSelected ? wxColour(255, 255, 255) : wxColour(0, 0, 0));
@@ -540,21 +611,21 @@ void MyDrawPanel::DrawBreakpoint(wxDC& dc, const Breakpoint& breakpoint, bool is
     dc.SetTextForeground(*wxBLACK);
 }
 
-// Ö±½ÇÁ¬Ïß»æÖÆ·½·¨
+// ç›´è§’è¿çº¿ç»˜åˆ¶æ–¹æ³•
 void MyDrawPanel::DrawOrthogonalWire(wxGraphicsContext* gc, const Wire& wire) {
     DrawOrthogonalWire(gc, wire.start, wire.end);
 }
 
 void MyDrawPanel::DrawOrthogonalWire(wxGraphicsContext* gc, const wxPoint& start, const wxPoint& end) {
-    // ¼ÆËãÖĞ¼ä¹Õµã
+    // è®¡ç®—ä¸­é—´æ‹ç‚¹
     wxPoint mid1, mid2;
 
-    // ¼òµ¥µÄÖ±½ÇÁ¬ÏßËã·¨£ºÏÈË®Æ½ºó´¹Ö±
+    // ç®€å•çš„ç›´è§’è¿çº¿ç®—æ³•ï¼šå…ˆæ°´å¹³åå‚ç›´
     int midX = start.x + (end.x - start.x) / 2;
     mid1 = wxPoint(midX, start.y);
     mid2 = wxPoint(midX, end.y);
 
-    // »æÖÆÈı¶ÎÏß£ºÆğµã->ÖĞ¼äµã1->ÖĞ¼äµã2->ÖÕµã
+    // ç»˜åˆ¶ä¸‰æ®µçº¿ï¼šèµ·ç‚¹->ä¸­é—´ç‚¹1->ä¸­é—´ç‚¹2->ç»ˆç‚¹
     gc->StrokeLine(start.x, start.y, mid1.x, mid1.y);
     gc->StrokeLine(mid1.x, mid1.y, mid2.x, mid2.y);
     gc->StrokeLine(mid2.x, mid2.y, end.x, end.y);
@@ -612,13 +683,13 @@ wxRect MyDrawPanel::GetGateBBox(const Gate& g) const {
     else if (g.type == "LED") {
         return wxRect(g.pos.x, g.pos.y, 60, 60);
     }
-    else if (g.type == "¿ª¹Ø") {
+    else if (g.type == "å¼€å…³") {
         return wxRect(g.pos.x - 5, g.pos.y - 30, 35, 35);
     }
     return wxRect(g.pos.x, g.pos.y, 80, 60);
 }
 
-// ¸¨Öúº¯Êı£º¼ÆËãµãµ½Ö±Ïß¶ÎµÄ¾àÀë£¨²»µİ¹é£©
+// è¾…åŠ©å‡½æ•°ï¼šè®¡ç®—ç‚¹åˆ°ç›´çº¿æ®µçš„è·ç¦»ï¼ˆä¸é€’å½’ï¼‰
 bool MyDrawPanel::IsPointNearStraightLine(const wxPoint& point, const wxPoint& lineStart,
     const wxPoint& lineEnd, int tolerance) {
     wxPoint p = point;
@@ -646,23 +717,23 @@ bool MyDrawPanel::IsPointNearStraightLine(const wxPoint& point, const wxPoint& l
 
 bool MyDrawPanel::IsPointNearLine(const wxPoint& point, const Wire& wire, int tolerance) {
     if (m_wireMode == WIRE_STRAIGHT) {
-        // Ö±ÏßÄ£Ê½£ºÖ±½Ó¼ì²â
+        // ç›´çº¿æ¨¡å¼ï¼šç›´æ¥æ£€æµ‹
         return IsPointNearStraightLine(point, wire.start, wire.end, tolerance);
     }
     else {
-        // Ö±½ÇÄ£Ê½£º¼ì²âÈı¶ÎÖ±Ïß
+        // ç›´è§’æ¨¡å¼ï¼šæ£€æµ‹ä¸‰æ®µç›´çº¿
         int midX = wire.start.x + (wire.end.x - wire.start.x) / 2;
         wxPoint mid1 = wxPoint(midX, wire.start.y);
         wxPoint mid2 = wxPoint(midX, wire.end.y);
 
-        // Ê¹ÓÃ¸¨Öúº¯Êı¼ì²âÃ¿¶Î£¬±ÜÃâµİ¹éµ¼ÖÂÕ»Òç³ö
+        // ä½¿ç”¨è¾…åŠ©å‡½æ•°æ£€æµ‹æ¯æ®µï¼Œé¿å…é€’å½’å¯¼è‡´æ ˆæº¢å‡º
         return IsPointNearStraightLine(point, wire.start, mid1, tolerance) ||
             IsPointNearStraightLine(point, mid1, mid2, tolerance) ||
             IsPointNearStraightLine(point, mid2, wire.end, tolerance);
     }
 }
 
-// ´Ó¶Ïµã²éÕÒÒı½ÅµÄ·½·¨
+// ä»æ–­ç‚¹æŸ¥æ‰¾å¼•è„šçš„æ–¹æ³•
 MyDrawPanel::PinConnection MyDrawPanel::FindNearestBreakpointPin(const wxPoint& point, int tolerance) {
     PinConnection nearestPin = { -1, -1, wxPoint() };
     double minDistance = tolerance * tolerance;
@@ -674,7 +745,7 @@ MyDrawPanel::PinConnection MyDrawPanel::FindNearestBreakpointPin(const wxPoint& 
 
         if (distance2 < minDistance) {
             minDistance = distance2;
-            nearestPin.gateIndex = -1; // Ê¹ÓÃ-1±íÊ¾¶Ïµã
+            nearestPin.gateIndex = -1; // ä½¿ç”¨-1è¡¨ç¤ºæ–­ç‚¹
             nearestPin.pinIndex = (int)i;
             nearestPin.position = bp.position;
         }
@@ -683,13 +754,13 @@ MyDrawPanel::PinConnection MyDrawPanel::FindNearestBreakpointPin(const wxPoint& 
     return nearestPin;
 }
 
-// ĞŞ¸ÄÏÖÓĞµÄ FindNearestPin ·½·¨£¬°üº¬¶ÏµãÒı½Å
+// ä¿®æ”¹ç°æœ‰çš„ FindNearestPin æ–¹æ³•ï¼ŒåŒ…å«æ–­ç‚¹å¼•è„š
 MyDrawPanel::PinConnection MyDrawPanel::FindNearestPin(const wxPoint& point, int tolerance) {
-    // Ê×ÏÈ²éÕÒÆÕÍ¨×é¼şÒı½Å
+    // é¦–å…ˆæŸ¥æ‰¾æ™®é€šç»„ä»¶å¼•è„š
     PinConnection nearestPin = { -1, -1, wxPoint() };
     double minDistance = tolerance * tolerance;
 
-    // ²éÕÒ×é¼şÒı½Å
+    // æŸ¥æ‰¾ç»„ä»¶å¼•è„š
     for (size_t i = 0; i < m_gates.size(); ++i) {
         const auto& gate = m_gates[i];
         for (size_t j = 0; j < gate.pins.size(); ++j) {
@@ -708,7 +779,7 @@ MyDrawPanel::PinConnection MyDrawPanel::FindNearestPin(const wxPoint& point, int
         }
     }
 
-    // ²éÕÒ¶ÏµãÒı½Å
+    // æŸ¥æ‰¾æ–­ç‚¹å¼•è„š
     PinConnection breakpointPin = FindNearestBreakpointPin(point, tolerance);
     if (breakpointPin.pinIndex != -1) {
         double breakpointDistance = (point.x - breakpointPin.position.x) * (point.x - breakpointPin.position.x) +
@@ -742,18 +813,18 @@ wxPoint MyDrawPanel::SnapToPin(const wxPoint& point) {
     return point;
 }
 
-// ĞÂÔö£º¼ÆËãµãµ½Ö±Ïß¶ÎµÄ×î½üµã
+// æ–°å¢ï¼šè®¡ç®—ç‚¹åˆ°ç›´çº¿æ®µçš„æœ€è¿‘ç‚¹
 wxPoint MyDrawPanel::FindClosestPointOnLine(const wxPoint& lineStart, const wxPoint& lineEnd, const wxPoint& point) {
     wxPoint lineVec(lineEnd.x - lineStart.x, lineEnd.y - lineStart.y);
     double lineLength2 = lineVec.x * lineVec.x + lineVec.y * lineVec.y;
 
     if (lineLength2 == 0) {
-        return lineStart; // Ïß¶Î³¤¶ÈÎª0
+        return lineStart; // çº¿æ®µé•¿åº¦ä¸º0
     }
 
-    // ¼ÆËãÍ¶Ó°²ÎÊı
+    // è®¡ç®—æŠ•å½±å‚æ•°
     double t = ((point.x - lineStart.x) * lineVec.x + (point.y - lineStart.y) * lineVec.y) / lineLength2;
-    t = std::max(0.0, std::min(1.0, t)); // ÏŞÖÆÔÚÏß¶Î·¶Î§ÄÚ
+    t = std::max(0.0, std::min(1.0, t)); // é™åˆ¶åœ¨çº¿æ®µèŒƒå›´å†…
 
     return wxPoint(
         lineStart.x + t * lineVec.x,
@@ -761,61 +832,64 @@ wxPoint MyDrawPanel::FindClosestPointOnLine(const wxPoint& lineStart, const wxPo
     );
 }
 
-// ĞÂÔö£º¼ÆËãµãÔÚÖ±Ïß¶ÎÉÏµÄ²ÎÊıÎ»ÖÃ
+// æ–°å¢ï¼šè®¡ç®—ç‚¹åœ¨ç›´çº¿æ®µä¸Šçš„å‚æ•°ä½ç½®
 double MyDrawPanel::CalculateParameterOnLine(const wxPoint& lineStart, const wxPoint& lineEnd, const wxPoint& pointOnLine) {
     if (lineStart.x == lineEnd.x) {
-        // ´¹Ö±Ïß¶Î
+        // å‚ç›´çº¿æ®µ
         if (lineEnd.y == lineStart.y) return 0.0;
         return double(pointOnLine.y - lineStart.y) / (lineEnd.y - lineStart.y);
     }
     else {
-        // Ë®Æ½»òÆäËûÏß¶Î
+        // æ°´å¹³æˆ–å…¶ä»–çº¿æ®µ
         if (lineEnd.x == lineStart.x) return 0.0;
         return double(pointOnLine.x - lineStart.x) / (lineEnd.x - lineStart.x);
     }
 }
 
-// ĞÂÔö£º¼ÆËãµãµ½Ö±½ÇÁ¬ÏßµÄ×î½üµã
+// æ–°å¢ï¼šè®¡ç®—ç‚¹åˆ°ç›´è§’è¿çº¿çš„æœ€è¿‘ç‚¹
 wxPoint MyDrawPanel::FindClosestPointOnOrthogonalLine(const Wire& wire, const wxPoint& point, double& outT) {
-    // ¼ÆËãÖ±½ÇÁ¬ÏßµÄÈı¸öÏß¶Î
+    // è®¡ç®—ç›´è§’è¿çº¿çš„ä¸‰ä¸ªçº¿æ®µ
     int midX = wire.start.x + (wire.end.x - wire.start.x) / 2;
     wxPoint mid1(midX, wire.start.y);
     wxPoint mid2(midX, wire.end.y);
 
-    // ·Ö±ğ¼ÆËãµ½Èı¸öÏß¶ÎµÄ×î½üµã
+    // åˆ†åˆ«è®¡ç®—åˆ°ä¸‰ä¸ªçº¿æ®µçš„æœ€è¿‘ç‚¹
     wxPoint closestPoint1 = FindClosestPointOnLine(wire.start, mid1, point);
     wxPoint closestPoint2 = FindClosestPointOnLine(mid1, mid2, point);
     wxPoint closestPoint3 = FindClosestPointOnLine(mid2, wire.end, point);
 
-    // ¼ÆËã¾àÀë
+    // è®¡ç®—è·ç¦»
     double dist1 = CalculateDistance(point, closestPoint1);
     double dist2 = CalculateDistance(point, closestPoint2);
     double dist3 = CalculateDistance(point, closestPoint3);
 
-    // ÕÒµ½×î½üµÄµã
+    // æ‰¾åˆ°æœ€è¿‘çš„ç‚¹å¹¶è®¡ç®—å¯¹åº”çš„å‚æ•°t
     if (dist1 <= dist2 && dist1 <= dist3) {
-        // ÔÚµÚÒ»¶ÎÏß¶ÎÉÏ
-        outT = CalculateParameterOnLine(wire.start, mid1, closestPoint1) * 0.333;
+        // åœ¨ç¬¬ä¸€æ®µçº¿æ®µä¸Š
+        double segmentT = CalculateParameterOnLine(wire.start, mid1, closestPoint1);
+        outT = segmentT * 0.333;
         return closestPoint1;
     }
     else if (dist2 <= dist1 && dist2 <= dist3) {
-        // ÔÚµÚ¶ş¶ÎÏß¶ÎÉÏ
-        outT = 0.333 + CalculateParameterOnLine(mid1, mid2, closestPoint2) * 0.333;
+        // åœ¨ç¬¬äºŒæ®µçº¿æ®µä¸Š
+        double segmentT = CalculateParameterOnLine(mid1, mid2, closestPoint2);
+        outT = 0.333 + segmentT * 0.333;
         return closestPoint2;
     }
     else {
-        // ÔÚµÚÈı¶ÎÏß¶ÎÉÏ
-        outT = 0.666 + CalculateParameterOnLine(mid2, wire.end, closestPoint3) * 0.334;
+        // åœ¨ç¬¬ä¸‰æ®µçº¿æ®µä¸Š
+        double segmentT = CalculateParameterOnLine(mid2, wire.end, closestPoint3);
+        outT = 0.666 + segmentT * 0.334;
         return closestPoint3;
     }
 }
 
-// ĞÂÔö£º¼ÆËãÁ½µã¼ä¾àÀë
+// æ–°å¢ï¼šè®¡ç®—ä¸¤ç‚¹é—´è·ç¦»
 double MyDrawPanel::CalculateDistance(const wxPoint& p1, const wxPoint& p2) {
     return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 }
 
-// ĞÂÔö£º¸üĞÂÁ¬½Óµ½¶ÏµãµÄËùÓĞÁ¬Ïß
+// æ–°å¢ï¼šæ›´æ–°è¿æ¥åˆ°æ–­ç‚¹çš„æ‰€æœ‰è¿çº¿
 void MyDrawPanel::UpdateWiresFromBreakpoint(int breakpointIndex) {
     if (breakpointIndex < 0 || breakpointIndex >= (int)m_breakpoints.size()) {
         return;
@@ -827,7 +901,7 @@ void MyDrawPanel::UpdateWiresFromBreakpoint(int breakpointIndex) {
         if (wireIndex >= 0 && wireIndex < (int)m_wires.size()) {
             Wire& wire = m_wires[wireIndex];
 
-            // ¸üĞÂÆğµã»òÖÕµãÎªµ±Ç°¶ÏµãÎ»ÖÃ
+            // æ›´æ–°èµ·ç‚¹æˆ–ç»ˆç‚¹ä¸ºå½“å‰æ–­ç‚¹ä½ç½®
             if (wire.startCompId == bp.breakpointId) {
                 wire.start = bp.position;
             }
@@ -839,9 +913,8 @@ void MyDrawPanel::UpdateWiresFromBreakpoint(int breakpointIndex) {
     Refresh();
 }
 
-// Á¬Ïß¸úËæÒÆ¶¯·½·¨
+// è¿çº¿è·Ÿéšç§»åŠ¨æ–¹æ³• - ä¼˜åŒ–ç‰ˆæœ¬
 void MyDrawPanel::UpdateConnectedWires(int gateIndex) {
-    // Ìí¼Óµİ¹é±£»¤
     static bool isUpdating = false;
     if (isUpdating) return;
     isUpdating = true;
@@ -854,53 +927,70 @@ void MyDrawPanel::UpdateConnectedWires(int gateIndex) {
     wxString compId = wxString::Format("U%d", gateIndex + 1);
     const Gate& movedGate = m_gates[gateIndex];
 
-    // ¸üĞÂËùÓĞÁ¬½Óµ½Õâ¸öÔª¼şµÄÁ¬Ïß
-    for (auto& wire : m_wires) {
+    // è®°å½•å“ªäº›è¿çº¿è¢«æ›´æ–°äº†
+    std::vector<int> updatedWires;
+
+    // æ›´æ–°æ‰€æœ‰è¿æ¥åˆ°è¿™ä¸ªå…ƒä»¶çš„è¿çº¿
+    for (size_t i = 0; i < m_wires.size(); ++i) {
+        auto& wire = m_wires[i];
+        bool wireUpdated = false;
+
         if (wire.startCompId == compId) {
-            // ÕÒµ½¶ÔÓ¦µÄÒı½Å²¢¸üĞÂÆğµã×ø±ê
+            // æ‰¾åˆ°å¯¹åº”çš„å¼•è„šå¹¶æ›´æ–°èµ·ç‚¹åæ ‡
             for (const auto& pin : movedGate.pins) {
                 if (pin.name == wire.startPinName) {
                     wire.start = pin.GetAbsolutePos(movedGate.pos);
+                    wireUpdated = true;
                     break;
                 }
             }
         }
 
         if (wire.endCompId == compId) {
-            // ÕÒµ½¶ÔÓ¦µÄÒı½Å²¢¸üĞÂÖÕµã×ø±ê
+            // æ‰¾åˆ°å¯¹åº”çš„å¼•è„šå¹¶æ›´æ–°ç»ˆç‚¹åæ ‡
             for (const auto& pin : movedGate.pins) {
                 if (pin.name == wire.endPinName) {
                     wire.end = pin.GetAbsolutePos(movedGate.pos);
+                    wireUpdated = true;
                     break;
                 }
             }
         }
+
+        if (wireUpdated) {
+            updatedWires.push_back((int)i);
+        }
+    }
+
+    // æ›´æ–°æ‰€æœ‰åœ¨è¢«ç§»åŠ¨è¿çº¿ä¸Šçš„æ–­ç‚¹
+    for (int wireIndex : updatedWires) {
+        UpdateBreakpointsOnWire(wireIndex);
     }
 
     isUpdating = false;
 }
 
-// ---------- ÊÂ¼ş´¦Àí ----------
+// ---------- äº‹ä»¶å¤„ç† ----------
 void MyDrawPanel::OnPaint(wxPaintEvent&) {
     wxAutoBufferedPaintDC dc(this);
     dc.Clear();
     dc.SetUserScale(m_scale, m_scale);
 
-    // »æÖÆÍø¸ñ
+    // ç»˜åˆ¶ç½‘æ ¼
     DrawGrid(dc);
 
-    // ´´½¨Ö§³Ö¿¹¾â³İµÄÍ¼ĞÎÉÏÏÂÎÄ
+    // åˆ›å»ºæ”¯æŒæŠ—é”¯é½¿çš„å›¾å½¢ä¸Šä¸‹æ–‡
     wxGraphicsContext* gc = wxGraphicsContext::Create(dc);
 
     if (gc) {
         gc->SetAntialiasMode(wxANTIALIAS_DEFAULT);
 
-        // »æÖÆ×é¼ş£¨Ê¹ÓÃÆÕÍ¨DC£¬ÒòÎªÍ¼ĞÎ±È½Ï¸´ÔÓ£©
+        // ç»˜åˆ¶ç»„ä»¶ï¼ˆä½¿ç”¨æ™®é€šDCï¼Œå› ä¸ºå›¾å½¢æ¯”è¾ƒå¤æ‚ï¼‰
         for (size_t i = 0; i < m_gates.size(); ++i) {
             auto& g = m_gates[i];
             DrawGate(dc, g);
 
-            // »æÖÆÑ¡ÖĞ×´Ì¬
+            // ç»˜åˆ¶é€‰ä¸­çŠ¶æ€
             if ((int)i == m_selectedIndex) {
                 wxRect r = GetGateBBox(g);
                 dc.SetPen(wxPen(wxColour(0, 100, 200), 2));
@@ -910,7 +1000,7 @@ void MyDrawPanel::OnPaint(wxPaintEvent&) {
             }
         }
 
-        // Ê¹ÓÃÍ¼ĞÎÉÏÏÂÎÄ»æÖÆÁ¬Ïß£¨¿¹¾â³İ£©
+        // ä½¿ç”¨å›¾å½¢ä¸Šä¸‹æ–‡ç»˜åˆ¶è¿çº¿ï¼ˆæŠ—é”¯é½¿ï¼‰
         for (size_t i = 0; i < m_wires.size(); ++i) {
             auto& w = m_wires[i];
 
@@ -929,34 +1019,34 @@ void MyDrawPanel::OnPaint(wxPaintEvent&) {
             wxGraphicsPen pen = gc->CreatePen(wxGraphicsPenInfo(wireColor).Width(width));
             gc->SetPen(pen);
 
-            // ¸ù¾İÁ¬ÏßÄ£Ê½»æÖÆ
+            // æ ¹æ®è¿çº¿æ¨¡å¼ç»˜åˆ¶
             if (m_wireMode == WIRE_STRAIGHT) {
-                // Ö±ÏßÄ£Ê½
+                // ç›´çº¿æ¨¡å¼
                 gc->StrokeLine(w.start.x, w.start.y, w.end.x, w.end.y);
             }
             else {
-                // Ö±½ÇÄ£Ê½
+                // ç›´è§’æ¨¡å¼
                 DrawOrthogonalWire(gc, w);
             }
         }
 
-        // »æÖÆ¶Ïµã
+        // ç»˜åˆ¶æ–­ç‚¹
         for (size_t i = 0; i < m_breakpoints.size(); ++i) {
             DrawBreakpoint(dc, m_breakpoints[i], (int)i == m_selectedBreakpointIndex);
         }
 
-        // »æÖÆÕıÔÚ»­µÄÏß
+        // ç»˜åˆ¶æ­£åœ¨ç”»çš„çº¿
         if (m_isDrawingWire) {
             double width = (m_connectedEndPin.gateIndex != -1 || m_connectedEndPin.pinIndex != -1) ? 3.0 : 2.0;
             wxGraphicsPen pen = gc->CreatePen(wxGraphicsPenInfo(wxColour(0, 0, 255)).Width(width));
             gc->SetPen(pen);
 
             if (m_wireMode == WIRE_STRAIGHT) {
-                // Ö±ÏßÄ£Ê½
+                // ç›´çº¿æ¨¡å¼
                 gc->StrokeLine(m_wireStart.x, m_wireStart.y, m_currentMouse.x, m_currentMouse.y);
             }
             else {
-                // Ö±½ÇÄ£Ê½
+                // ç›´è§’æ¨¡å¼
                 DrawOrthogonalWire(gc, m_wireStart, m_currentMouse);
             }
         }
@@ -964,14 +1054,14 @@ void MyDrawPanel::OnPaint(wxPaintEvent&) {
         delete gc;
     }
     else {
-        // »ØÍËµ½ÆÕÍ¨DC»æÖÆ
+        // å›é€€åˆ°æ™®é€šDCç»˜åˆ¶
         wxPen redPen(wxColour(200, 0, 0), 2);
         wxPen selectionPen(wxColour(0, 100, 200), 2);
         wxPen wireSelectionPen(wxColour(255, 0, 0), 3);
         wxPen connectedWirePen(wxColour(0, 100, 0), 2);
         wxPen drawingWirePen(wxColour(0, 0, 255), 2);
 
-        // »æÖÆ×é¼ş
+        // ç»˜åˆ¶ç»„ä»¶
         for (size_t i = 0; i < m_gates.size(); ++i) {
             auto& g = m_gates[i];
             DrawGate(dc, g);
@@ -985,7 +1075,7 @@ void MyDrawPanel::OnPaint(wxPaintEvent&) {
             }
         }
 
-        // »æÖÆÁ¬Ïß - »ØÍËÄ£Ê½ÏÂÖ»Ö§³ÖÖ±ÏßÄ£Ê½
+        // ç»˜åˆ¶è¿çº¿ - å›é€€æ¨¡å¼ä¸‹åªæ”¯æŒç›´çº¿æ¨¡å¼
         for (size_t i = 0; i < m_wires.size(); ++i) {
             auto& w = m_wires[i];
 
@@ -1002,12 +1092,12 @@ void MyDrawPanel::OnPaint(wxPaintEvent&) {
             dc.DrawLine(w.start, w.end);
         }
 
-        // »æÖÆ¶Ïµã
+        // ç»˜åˆ¶æ–­ç‚¹
         for (size_t i = 0; i < m_breakpoints.size(); ++i) {
             DrawBreakpoint(dc, m_breakpoints[i], (int)i == m_selectedBreakpointIndex);
         }
 
-        // »æÖÆÕıÔÚ»­µÄÏß
+        // ç»˜åˆ¶æ­£åœ¨ç”»çš„çº¿
         if (m_isDrawingWire) {
             dc.SetPen(drawingWirePen);
             dc.DrawLine(m_wireStart, m_currentMouse);
@@ -1020,7 +1110,7 @@ void MyDrawPanel::OnPaint(wxPaintEvent&) {
 void MyDrawPanel::OnRightClick(wxMouseEvent& evt) {
     wxPoint pos = ToLogical(evt.GetPosition());
 
-    // Ê×ÏÈ¼ì²éÊÇ·ñµã»÷ÁË¶Ïµã
+    // é¦–å…ˆæ£€æŸ¥æ˜¯å¦ç‚¹å‡»äº†æ–­ç‚¹
     int hitBreakpointIndex = FindBreakpointAtPoint(pos);
     if (hitBreakpointIndex != -1) {
         m_selectedBreakpointIndex = hitBreakpointIndex;
@@ -1028,9 +1118,9 @@ void MyDrawPanel::OnRightClick(wxMouseEvent& evt) {
         m_selectedIndex = -1;
 
         wxMenu menu;
-        menu.Append(ID_DELETE_BREAKPOINT, "É¾³ı¶Ïµã");
+        menu.Append(ID_DELETE_BREAKPOINT, "åˆ é™¤æ–­ç‚¹");
 
-        // °ó¶¨É¾³ı¶ÏµãÊÂ¼ş
+        // ç»‘å®šåˆ é™¤æ–­ç‚¹äº‹ä»¶
         menu.Bind(wxEVT_MENU, [this](wxCommandEvent&) {
             DeleteSelectedBreakpoint();
             }, ID_DELETE_BREAKPOINT);
@@ -1053,16 +1143,16 @@ void MyDrawPanel::OnRightClick(wxMouseEvent& evt) {
         m_selectedBreakpointIndex = -1;
 
         wxMenu menu;
-        menu.Append(ID_ADD_BREAKPOINT, "Ìí¼Ó¶Ïµã");
+        menu.Append(ID_ADD_BREAKPOINT, "æ·»åŠ æ–­ç‚¹");
         menu.AppendSeparator();
-        menu.Append(ID_DELETE_WIRE, "É¾³ıÏßÌõ");
+        menu.Append(ID_DELETE_WIRE, "åˆ é™¤çº¿æ¡");
 
-        // °ó¶¨Ìí¼Ó¶ÏµãÊÂ¼ş - Ê¹ÓÃÕıÈ·µÄ²¶»ñ·½Ê½
+        // ç»‘å®šæ·»åŠ æ–­ç‚¹äº‹ä»¶
         menu.Bind(wxEVT_MENU, [this, pos, hitWireIndex](wxCommandEvent&) {
             AddBreakpoint(pos, hitWireIndex);
             }, ID_ADD_BREAKPOINT);
 
-        // °ó¶¨É¾³ıÁ¬ÏßÊÂ¼ş
+        // ç»‘å®šåˆ é™¤è¿çº¿äº‹ä»¶
         menu.Bind(wxEVT_MENU, [this](wxCommandEvent&) {
             DeleteSelectedWire();
             }, ID_DELETE_WIRE);
@@ -1086,12 +1176,12 @@ void MyDrawPanel::OnRightClick(wxMouseEvent& evt) {
 
     if (hitIndex != -1) {
         wxMenu menu;
-        menu.Append(ID_EDIT_PROPERTIES, "±à¼­ÊôĞÔ");
+        menu.Append(ID_EDIT_PROPERTIES, "ç¼–è¾‘å±æ€§");
         menu.AppendSeparator();
-        menu.Append(ID_DELETE_SELECTED, "É¾³ı×é¼ş");
-        menu.AppendCheckItem(ID_SHOW_PINS, "ÏÔÊ¾Òı½Å")->Check(m_showPins);
+        menu.Append(ID_DELETE_SELECTED, "åˆ é™¤ç»„ä»¶");
+        menu.AppendCheckItem(ID_SHOW_PINS, "æ˜¾ç¤ºå¼•è„š")->Check(m_showPins);
 
-        // °ó¶¨×é¼şÏà¹ØÊÂ¼ş
+        // ç»‘å®šç»„ä»¶ç›¸å…³äº‹ä»¶
         menu.Bind(wxEVT_MENU, [this](wxCommandEvent&) {
             EditSelectedProperties();
             }, ID_EDIT_PROPERTIES);
@@ -1107,10 +1197,11 @@ void MyDrawPanel::OnRightClick(wxMouseEvent& evt) {
         PopupMenu(&menu);
     }
 }
+
 void MyDrawPanel::OnMouseMove(wxMouseEvent& evt) {
     wxPoint pos = ToLogical(evt.GetPosition());
 
-    // ¶ÏµãÍÏ¶¯Âß¼­
+    // æ–­ç‚¹æ‹–åŠ¨é€»è¾‘
     if (m_isDraggingBreakpoint && evt.Dragging() && evt.LeftIsDown()) {
         if (m_draggedBreakpointIndex >= 0 && m_draggedBreakpointIndex < (int)m_breakpoints.size()) {
             wxPoint newPos = pos;
@@ -1119,10 +1210,10 @@ void MyDrawPanel::OnMouseMove(wxMouseEvent& evt) {
                 newPos = SnapToGrid(newPos);
             }
 
-            // ¸üĞÂ¶ÏµãÎ»ÖÃ
+            // æ›´æ–°æ–­ç‚¹ä½ç½®
             m_breakpoints[m_draggedBreakpointIndex].position = newPos;
 
-            // Á¢¼´¸üĞÂÁ¬½Óµ½Õâ¸ö¶ÏµãµÄËùÓĞÁ¬Ïß
+            // ç«‹å³æ›´æ–°è¿æ¥åˆ°è¿™ä¸ªæ–­ç‚¹çš„æ‰€æœ‰è¿çº¿
             UpdateWiresFromBreakpoint(m_draggedBreakpointIndex);
 
             Refresh();
@@ -1166,7 +1257,7 @@ void MyDrawPanel::OnMouseMove(wxMouseEvent& evt) {
             m_connectedEndPin = nearestPin;
         }
         else {
-            // ³¢ÊÔÎü¸½µ½¶Ïµã
+            // å°è¯•å¸é™„åˆ°æ–­ç‚¹
             wxPoint snappedPos = SnapToBreakpoint(pos);
             if (snappedPos != pos) {
                 m_currentMouse = snappedPos;
@@ -1192,10 +1283,10 @@ void MyDrawPanel::OnMouseMove(wxMouseEvent& evt) {
                 newPos = SnapToGrid(newPos);
             }
 
-            // ¸üĞÂÔª¼şÎ»ÖÃ
+            // æ›´æ–°å…ƒä»¶ä½ç½®
             m_gates[m_draggedIndex].pos = newPos;
 
-            // ¸üĞÂÁ¬½Óµ½Õâ¸öÔª¼şµÄËùÓĞÁ¬Ïß
+            // æ›´æ–°è¿æ¥åˆ°è¿™ä¸ªå…ƒä»¶çš„æ‰€æœ‰è¿çº¿å’Œæ–­ç‚¹
             UpdateConnectedWires(m_draggedIndex);
 
             Refresh();
@@ -1209,14 +1300,9 @@ void MyDrawPanel::OnMouseUp(wxMouseEvent&) {
         m_draggedBreakpointIndex = -1;
         if (HasCapture()) ReleaseMouse();
         SetCursor(wxCursor(wxCURSOR_ARROW));
-
-        // ¸üĞÂÁ¬½Óµ½Õâ¸ö¶ÏµãµÄËùÓĞÁ¬Ïß
-        if (m_draggedBreakpointIndex >= 0) {
-            UpdateWiresFromBreakpoint(m_draggedBreakpointIndex);
-        }
     }
     else if (m_isDraggingGate) {
-        // È·±£Á¬ÏßÎ»ÖÃ×îÖÕ¸üĞÂ
+        // ç¡®ä¿è¿çº¿ä½ç½®æœ€ç»ˆæ›´æ–°
         if (m_draggedIndex >= 0 && m_draggedIndex < (int)m_gates.size()) {
             UpdateConnectedWires(m_draggedIndex);
         }
@@ -1232,32 +1318,32 @@ void MyDrawPanel::OnMouseUp(wxMouseEvent&) {
             newWire.start = m_wireStart;
             newWire.end = m_currentMouse;
 
-            // ´¦ÀíÆğÊ¼Á¬½Ó
+            // å¤„ç†èµ·å§‹è¿æ¥
             if (m_connectedStartPin.gateIndex != -1) {
-                // Á¬½Óµ½×é¼şÒı½Å
+                // è¿æ¥åˆ°ç»„ä»¶å¼•è„š
                 const auto& startGate = m_gates[m_connectedStartPin.gateIndex];
                 const auto& startPin = startGate.pins[m_connectedStartPin.pinIndex];
                 newWire.startCompId = wxString::Format("U%d", m_connectedStartPin.gateIndex + 1);
                 newWire.startPinName = startPin.name;
             }
             else if (m_connectedStartPin.gateIndex == -1 && m_connectedStartPin.pinIndex != -1) {
-                // Á¬½Óµ½¶Ïµã
+                // è¿æ¥åˆ°æ–­ç‚¹
                 const auto& startBreakpoint = m_breakpoints[m_connectedStartPin.pinIndex];
                 newWire.startCompId = startBreakpoint.breakpointId;
                 newWire.startPinName = "breakpoint";
                 newWire.isConnectedToBreakpoint = true;
             }
 
-            // ´¦Àí½áÊøÁ¬½Ó
+            // å¤„ç†ç»“æŸè¿æ¥
             if (m_connectedEndPin.gateIndex != -1) {
-                // Á¬½Óµ½×é¼şÒı½Å
+                // è¿æ¥åˆ°ç»„ä»¶å¼•è„š
                 const auto& endGate = m_gates[m_connectedEndPin.gateIndex];
                 const auto& endPin = endGate.pins[m_connectedEndPin.pinIndex];
                 newWire.endCompId = wxString::Format("U%d", m_connectedEndPin.gateIndex + 1);
                 newWire.endPinName = endPin.name;
             }
             else if (m_connectedEndPin.gateIndex == -1 && m_connectedEndPin.pinIndex != -1) {
-                // Á¬½Óµ½¶Ïµã
+                // è¿æ¥åˆ°æ–­ç‚¹
                 const auto& endBreakpoint = m_breakpoints[m_connectedEndPin.pinIndex];
                 newWire.endCompId = endBreakpoint.breakpointId;
                 newWire.endPinName = "breakpoint";
@@ -1266,7 +1352,7 @@ void MyDrawPanel::OnMouseUp(wxMouseEvent&) {
 
             m_wires.push_back(newWire);
 
-            // ¼ÇÂ¼Á¬ÏßÁ¬½Óµ½¶Ïµã
+            // è®°å½•è¿çº¿è¿æ¥åˆ°æ–­ç‚¹
             if (m_connectedStartPin.gateIndex == -1 && m_connectedStartPin.pinIndex != -1) {
                 m_breakpoints[m_connectedStartPin.pinIndex].connectedWires.push_back((int)m_wires.size() - 1);
             }
@@ -1275,7 +1361,7 @@ void MyDrawPanel::OnMouseUp(wxMouseEvent&) {
             }
         }
         else {
-            // ¼ì²éÊÇ·ñÁ¬½Óµ½¶Ïµã
+            // æ£€æŸ¥æ˜¯å¦è¿æ¥åˆ°æ–­ç‚¹
             int breakpointIndex = FindBreakpointAtPoint(m_currentMouse, 8);
             if (breakpointIndex != -1) {
                 Wire newWire;
@@ -1286,7 +1372,7 @@ void MyDrawPanel::OnMouseUp(wxMouseEvent&) {
                 newWire.isConnectedToBreakpoint = true;
                 m_wires.push_back(newWire);
 
-                // ¼ÇÂ¼Á¬ÏßÁ¬½Óµ½¶Ïµã
+                // è®°å½•è¿çº¿è¿æ¥åˆ°æ–­ç‚¹
                 m_breakpoints[breakpointIndex].connectedWires.push_back((int)m_wires.size() - 1);
             }
         }
@@ -1302,7 +1388,7 @@ void MyDrawPanel::OnMouseUp(wxMouseEvent&) {
 void MyDrawPanel::OnMouseDown(wxMouseEvent& evt) {
     wxPoint pos = ToLogical(evt.GetPosition());
 
-    // Ê×ÏÈ¼ì²éÊÇ·ñµã»÷ÁË¶Ïµã
+    // é¦–å…ˆæ£€æŸ¥æ˜¯å¦ç‚¹å‡»äº†æ–­ç‚¹
     int breakpointIndex = FindBreakpointAtPoint(pos);
     if (breakpointIndex != -1) {
         if (evt.LeftDown()) {
@@ -1326,7 +1412,7 @@ void MyDrawPanel::OnMouseDown(wxMouseEvent& evt) {
         pos = SnapToGrid(pos);
     }
     else {
-        // ³¢ÊÔÎü¸½µ½¶Ïµã
+        // å°è¯•å¸é™„åˆ°æ–­ç‚¹
         pos = SnapToBreakpoint(pos);
     }
 
@@ -1433,7 +1519,7 @@ void MyDrawPanel::OnKeyDown(wxKeyEvent& evt) {
     case 'B':
     case 'b':
         if (evt.ControlDown()) {
-            // ÔÚÑ¡ÖĞµÄÁ¬ÏßÉÏÌí¼Ó¶Ïµã
+            // åœ¨é€‰ä¸­çš„è¿çº¿ä¸Šæ·»åŠ æ–­ç‚¹
             if (m_selectedWireIndex >= 0) {
                 wxPoint pos = m_wires[m_selectedWireIndex].start;
                 AddBreakpoint(pos, m_selectedWireIndex);
